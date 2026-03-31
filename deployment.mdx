@@ -1,0 +1,587 @@
+---
+title: "Deployment"
+description: "Deploy RLink to production on Vercel"
+---
+
+## Overview
+
+RLink is optimized for deployment on Vercel, with built-in support for:
+- **Automatic deployments** from Git
+- **Environment variable management**
+- **Serverless functions** for API routes
+- **Cron jobs** for scheduled tasks
+- **Edge network** for global performance
+
+## Prerequisites
+
+<AccordionGroup>
+  <Accordion title="Vercel Account" icon="v">
+    Sign up for a free account at [vercel.com](https://vercel.com)
+  </Accordion>
+
+  <Accordion title="Neon Database" icon="database">
+    Create a PostgreSQL database at [neon.tech](https://neon.tech)
+    - Note your connection string
+    - Ensure database is accessible from Vercel
+  </Accordion>
+
+  <Accordion title="Resend Account" icon="envelope">
+    Create an account at [resend.com](https://resend.com)
+    - Get your API key
+    - Verify your sending domain
+  </Accordion>
+
+  <Accordion title="Git Repository" icon="git">
+    Ensure your code is pushed to GitHub, GitLab, or Bitbucket
+  </Accordion>
+</AccordionGroup>
+
+## Deployment Steps
+
+### 1. Connect Repository to Vercel
+
+<Steps>
+  <Step title="Import Project">
+    1. Go to [Vercel Dashboard](https://vercel.com/dashboard)
+    2. Click "Add New..." → "Project"
+    3. Select your Git provider (GitHub)
+    4. Import the `rlink` repository
+  </Step>
+
+  <Step title="Configure Build Settings">
+    Vercel auto-detects Next.js:
+    
+    - **Framework Preset**: Next.js
+    - **Build Command**: `next build`
+    - **Output Directory**: `.next`
+    - **Install Command**: `npm install`
+    
+    <Note>No changes needed - Vercel uses these defaults automatically</Note>
+  </Step>
+
+  <Step title="Set Root Directory">
+    If your Next.js app is in a subdirectory, set the root directory. Otherwise, leave as `.`
+  </Step>
+</Steps>
+
+### 2. Configure Environment Variables
+
+In your Vercel project settings, add all environment variables:
+
+<AccordionGroup>
+  <Accordion title="Database Configuration">
+    ```bash
+    DATABASE_URL="postgresql://user:pass@host.neon.tech/database?sslmode=require"
+    ```
+    
+    Get this from your Neon dashboard → Connection String
+  </Accordion>
+
+  <Accordion title="Application URLs">
+    ```bash
+    NEXT_PUBLIC_APP_URL="https://your-domain.vercel.app"
+    BETTER_AUTH_URL="https://your-domain.vercel.app"
+    SITE_URL="https://your-domain.vercel.app"
+    ```
+    
+    Replace `your-domain` with your actual Vercel domain
+  </Accordion>
+
+  <Accordion title="CORS & Security">
+    ```bash
+    ALLOWED_ORIGIN="https://your-domain.vercel.app"
+    ```
+    
+    **Important**: Set this to your actual production domain for proper CORS configuration
+  </Accordion>
+
+  <Accordion title="Email Configuration">
+    ```bash
+    RESEND_API_KEY="re_xxxxxxxxxxxxxxxxxxxxx"
+    RESEND_FROM="RLink <noreply@yourdomain.com>"
+    ```
+    
+    Get your API key from Resend dashboard → API Keys
+  </Accordion>
+
+  <Accordion title="Authentication Secrets">
+    ```bash
+    BETTER_AUTH_SECRET="your-random-32-char-secret-here"
+    ```
+    
+    Generate a secure random string (minimum 32 characters):
+    ```bash
+    openssl rand -base64 32
+    ```
+  </Accordion>
+
+  <Accordion title="Cron & Cache Secrets">
+    ```bash
+    CRON_SECRET="your-cron-secret-here"
+    REVALIDATION_SECRET="your-revalidation-secret-here"
+    ```
+    
+    Generate these similarly to the auth secret
+  </Accordion>
+</AccordionGroup>
+
+<Warning>
+  **Never commit these secrets to Git!** Always use Vercel's environment variable system.
+</Warning>
+
+### 3. Deploy Database Schema
+
+Before your first deployment, apply database migrations:
+
+<Steps>
+  <Step title="Local Setup">
+    ```bash
+    # Set your production DATABASE_URL locally
+    export DATABASE_URL="postgresql://..."
+    
+    # Apply migrations
+    npx drizzle-kit migrate
+    ```
+  </Step>
+
+  <Step title="Verify Schema">
+    Connect to your Neon database and verify tables exist:
+    - Better Auth tables (`users`, `sessions`, etc.)
+    - Application tables (`projects`, `leads`, etc.)
+  </Step>
+</Steps>
+
+<Note>
+  Alternatively, you can run migrations from Vercel by adding a custom build script, but local migration is recommended for first deployment.
+</Note>
+
+### 4. Configure Cron Jobs
+
+RLink uses Vercel Cron for scheduled tasks.
+
+<Steps>
+  <Step title="Verify vercel.json">
+    Ensure `vercel.json` exists in your project root:
+    
+    ```json
+    {
+      "crons": [
+        {
+          "path": "/api/cron/activity-logs-retention",
+          "schedule": "0 0 * * *"
+        }
+      ]
+    }
+    ```
+    
+    This runs daily at midnight UTC to clean up old activity logs.
+  </Step>
+
+  <Step title="Set Cron Secret">
+    In Vercel dashboard:
+    1. Go to Settings → Environment Variables
+    2. Ensure `CRON_SECRET` is set
+    3. Vercel will automatically add this as `Authorization: Bearer {CRON_SECRET}` header
+  </Step>
+
+  <Step title="Test Cron">
+    After deployment, manually trigger:
+    ```bash
+    curl -X POST https://your-domain.vercel.app/api/cron/activity-logs-retention \
+      -H "Authorization: Bearer YOUR_CRON_SECRET"
+    ```
+  </Step>
+</Steps>
+
+### 5. Deploy Application
+
+<Steps>
+  <Step title="Trigger Deployment">
+    Click "Deploy" in Vercel dashboard, or push to your main branch to trigger automatic deployment.
+  </Step>
+
+  <Step title="Monitor Build">
+    Watch the build logs in Vercel dashboard. Common issues:
+    - Environment variable typos
+    - Database connection errors
+    - Missing dependencies
+  </Step>
+
+  <Step title="Check Deployment">
+    Once deployed, visit your Vercel URL:
+    ```
+    https://your-project.vercel.app
+    ```
+    
+    You should see the RLink login page.
+  </Step>
+</Steps>
+
+## Post-Deployment Checklist
+
+<Checklist>
+  <Check>Database migrations applied successfully</Check>
+  <Check>Environment variables configured in Vercel</Check>
+  <Check>Application loads at production URL</Check>
+  <Check>Login functionality works</Check>
+  <Check>Email sending works (test password reset)</Check>
+  <Check>Cron job configured and tested</Check>
+  <Check>SSL certificate active (HTTPS)</Check>
+  <Check>Custom domain configured (if applicable)</Check>
+</Checklist>
+
+## Custom Domain Setup
+
+### 1. Add Domain to Vercel
+
+<Steps>
+  <Step title="Add Domain">
+    1. Go to Project Settings → Domains
+    2. Click "Add Domain"
+    3. Enter your domain (e.g., `rlink.rlanddevelopment.com`)
+  </Step>
+
+  <Step title="Configure DNS">
+    Add the following DNS records at your domain registrar:
+    
+    **A Record**:
+    ```
+    Type: A
+    Name: @ (or subdomain)
+    Value: 76.76.21.21
+    ```
+    
+    **AAAA Record** (for IPv6):
+    ```
+    Type: AAAA
+    Name: @ (or subdomain)
+    Value: 2606:4700:4700::1111
+    ```
+    
+    Or use **CNAME** for subdomains:
+    ```
+    Type: CNAME
+    Name: rlink
+    Value: cname.vercel-dns.com
+    ```
+  </Step>
+
+  <Step title="Verify Domain">
+    Vercel will automatically verify DNS propagation. This can take 24-48 hours.
+  </Step>
+
+  <Step title="Update Environment Variables">
+    Update all URL-related environment variables to use your custom domain:
+    ```bash
+    NEXT_PUBLIC_APP_URL="https://rlink.rlanddevelopment.com"
+    BETTER_AUTH_URL="https://rlink.rlanddevelopment.com"
+    SITE_URL="https://rlink.rlanddevelopment.com"
+    ALLOWED_ORIGIN="https://rlink.rlanddevelopment.com"
+    ```
+  </Step>
+</Steps>
+
+## Environment-Specific Configuration
+
+### Production Environment
+
+```bash
+# Production database
+DATABASE_URL="postgresql://prod-user:pass@prod-host.neon.tech/rlink?sslmode=require"
+
+# Production URLs
+NEXT_PUBLIC_APP_URL="https://rlink.rlanddevelopment.com"
+ALLOWED_ORIGIN="https://rlink.rlanddevelopment.com"
+
+# Production email
+RESEND_FROM="RLink <noreply@rlanddevelopment.com>"
+```
+
+### Staging Environment
+
+For a staging deployment:
+
+```bash
+# Staging database (separate from production)
+DATABASE_URL="postgresql://staging-user:pass@staging-host.neon.tech/rlink-staging?sslmode=require"
+
+# Staging URLs
+NEXT_PUBLIC_APP_URL="https://rlink-staging.vercel.app"
+ALLOWED_ORIGIN="https://rlink-staging.vercel.app"
+
+# Staging email (use test domain)
+RESEND_FROM="RLink Staging <noreply@staging.rlanddevelopment.com>"
+```
+
+<Note>
+  Create a separate Vercel project for staging linked to a `staging` or `develop` branch.
+</Note>
+
+## Continuous Deployment
+
+### Automatic Deployments
+
+Vercel automatically deploys when you push to connected branches:
+
+- **Production**: Pushes to `main` → Production deployment
+- **Preview**: Pushes to other branches → Preview deployment
+
+### Branch Protection
+
+Configure branch protection in GitHub:
+
+```yaml
+# .github/workflows/ci.yml (example)
+name: CI
+on: [pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install dependencies
+        run: npm install
+      - name: Run tests
+        run: npm test
+      - name: Run linter
+        run: npm run lint
+```
+
+## Performance Optimization
+
+### 1. Enable Edge Functions
+
+**[Inference]** Consider using Vercel Edge Functions for API routes that need ultra-low latency:
+
+```typescript
+// app/api/some-route/route.ts
+export const runtime = 'edge';
+```
+
+### 2. Configure Caching
+
+Set proper cache headers in `next.config.ts`:
+
+```typescript
+async headers() {
+  return [
+    {
+      source: '/uploads/:path*',
+      headers: [
+        {
+          key: 'Cache-Control',
+          value: 'public, max-age=31536000, immutable',
+        },
+      ],
+    },
+  ];
+}
+```
+
+### 3. Optimize Images
+
+Images are automatically optimized by Next.js Image component. Ensure you're using it:
+
+```tsx
+import Image from 'next/image';
+
+<Image 
+  src="/uploads/projects/cover.jpg"
+  alt="Project cover"
+  width={800}
+  height={600}
+  priority // For above-the-fold images
+/>
+```
+
+## Monitoring & Logging
+
+### Vercel Analytics
+
+Enable Vercel Analytics for production insights:
+
+1. Go to Project Settings → Analytics
+2. Enable Web Analytics
+3. View metrics in dashboard
+
+### Error Tracking
+
+**[Inference]** Consider integrating error tracking:
+
+- **Sentry**: For comprehensive error monitoring
+- **LogRocket**: For session replay
+- **Vercel Logs**: Built-in log streaming
+
+## Rollback Strategy
+
+If a deployment causes issues:
+
+<Steps>
+  <Step title="Instant Rollback">
+    In Vercel dashboard:
+    1. Go to Deployments
+    2. Find last working deployment
+    3. Click "..." → "Promote to Production"
+  </Step>
+
+  <Step title="Git Revert">
+    Revert the problematic commit:
+    ```bash
+    git revert HEAD
+    git push origin main
+    ```
+  </Step>
+</Steps>
+
+## Security Hardening
+
+<AccordionGroup>
+  <Accordion title="Security Headers" icon="shield">
+    Verify security headers are set in `next.config.ts`:
+    
+    ```typescript
+    async headers() {
+      return [
+        {
+          source: '/:path*',
+          headers: [
+            { key: 'X-DNS-Prefetch-Control', value: 'on' },
+            { key: 'X-Frame-Options', value: 'DENY' },
+            { key: 'X-Content-Type-Options', value: 'nosniff' },
+            { key: 'Referrer-Policy', value: 'origin-when-cross-origin' },
+          ],
+        },
+      ];
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Rate Limiting" icon="gauge">
+    **[Inference]** Rate limiting is implemented server-side in API routes. Ensure it's properly configured for production traffic.
+  </Accordion>
+
+  <Accordion title="Database Security" icon="database">
+    - Enable SSL mode in connection string (`?sslmode=require`)
+    - Use Neon's IP allowlist if needed
+    - Rotate database passwords regularly
+  </Accordion>
+
+  <Accordion title="Secret Rotation" icon="key">
+    Rotate secrets periodically:
+    1. Generate new secret
+    2. Update in Vercel environment variables
+    3. Redeploy application
+    4. Invalidate old sessions (users will need to re-login)
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Database Connection Errors">
+    **Error**: `Connection timeout` or `Connection refused`
+    
+    **Solutions**:
+    - Verify `DATABASE_URL` is correct
+    - Check Neon database is active
+    - Ensure SSL mode is set: `?sslmode=require`
+    - Verify Neon's IP allowlist includes Vercel IPs
+  </Accordion>
+
+  <Accordion title="Build Failures">
+    **Error**: `Build failed with exit code 1`
+    
+    **Solutions**:
+    - Check build logs in Vercel dashboard
+    - Verify all environment variables are set
+    - Run `npm run build` locally to reproduce
+    - Check for TypeScript errors
+  </Accordion>
+
+  <Accordion title="Email Not Sending">
+    **Error**: Emails not being delivered
+    
+    **Solutions**:
+    - Verify `RESEND_API_KEY` is correct
+    - Check Resend dashboard for API usage/errors
+    - Ensure sending domain is verified
+    - Check spam folder for test emails
+  </Accordion>
+
+  <Accordion title="CORS Errors">
+    **Error**: `CORS policy: No 'Access-Control-Allow-Origin' header`
+    
+    **Solutions**:
+    - Verify `ALLOWED_ORIGIN` matches your actual domain
+    - Check `next.config.ts` CORS configuration
+    - Ensure cookies are being sent with requests
+  </Accordion>
+
+  <Accordion title="Session Errors">
+    **Error**: `Session expired` or `Not authenticated`
+    
+    **Solutions**:
+    - Verify `BETTER_AUTH_SECRET` is set
+    - Check `NEXT_PUBLIC_APP_URL` matches deployment URL
+    - Clear browser cookies and try again
+    - Verify Better Auth tables exist in database
+  </Accordion>
+</AccordionGroup>
+
+## Scaling Considerations
+
+### Database Scaling
+
+Neon PostgreSQL auto-scales. For high traffic:
+
+1. **Enable connection pooling** in Neon dashboard
+2. **Use read replicas** for heavy read operations
+3. **Optimize queries** with proper indexes
+
+### Vercel Plan Limits
+
+<Card title="Free Tier Limits" icon="circle-info">
+  - 100 GB bandwidth/month
+  - 100 hours function execution/month
+  - Serverless function timeout: 10 seconds
+</Card>
+
+For production, consider Vercel Pro or Enterprise for:
+- Increased bandwidth
+- Longer function timeouts
+- Team collaboration features
+- Advanced analytics
+
+## Backup Strategy
+
+<Steps>
+  <Step title="Database Backups">
+    Neon provides automatic backups. Verify:
+    1. Go to Neon dashboard → Backups
+    2. Ensure daily backups are enabled
+    3. Configure retention period (7-30 days recommended)
+  </Step>
+
+  <Step title="Code Backups">
+    Git provides version control. Additional backups:
+    - Clone repository locally periodically
+    - Mirror to a private backup repository
+  </Step>
+
+  <Step title="Environment Backups">
+    Document all environment variables securely:
+    - Store in password manager (1Password, LastPass)
+    - Keep offline encrypted backup
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Monitoring Guide" icon="chart-line" href="/guides/monitoring">
+    Set up monitoring and alerts
+  </Card>
+  <Card title="Maintenance" icon="wrench" href="/guides/maintenance">
+    Regular maintenance tasks
+  </Card>
+</CardGroup>

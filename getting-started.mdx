@@ -1,0 +1,265 @@
+---
+title: "Getting Started"
+description: "Set up your local development environment for RLink"
+---
+
+## Prerequisites
+
+Before you begin, ensure you have the following installed on your development machine:
+
+<AccordionGroup>
+  <Accordion title="Node.js (LTS recommended)" icon="node-js">
+    Install the latest LTS version of Node.js from [nodejs.org](https://nodejs.org/)
+
+    Verify installation:
+
+    ```bash
+    node --version
+    npm --version
+    ```
+  </Accordion>
+
+  <Accordion title="Git" icon="git">
+    Install Git for version control from [git-scm.com](https://git-scm.com/)
+
+    Verify installation:
+
+    ```bash
+    git --version
+    ```
+  </Accordion>
+
+  <Accordion title="Code Editor" icon="code">
+    Recommended: [Visual Studio Code](https://code.visualstudio.com/) or [Cursor](https://cursor.com/) with the following extensions:
+
+    - ESLint
+    - Prettier
+    - Tailwind CSS IntelliSense
+    - TypeScript and JavaScript Language Features
+  </Accordion>
+</AccordionGroup>
+
+## Installation
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/dazedmind/rlink.git
+cd rlink
+```
+
+### 2. Install Dependencies
+
+This project uses npm and has a `package-lock.json` file for consistent dependency versions.
+
+```bash
+npm install
+```
+
+<Warning>
+  Do not use `yarn` or `pnpm` as this may cause dependency conflicts. Stick with `npm` to maintain consistency with the lock file.
+</Warning>
+
+### 3. Environment Configuration
+
+Create a `.env` file in the project root with the following variables:
+
+```bash
+# Database Configuration
+DATABASE_URL="postgresql://username:password@host/database?sslmode=require"
+
+# Application URLs
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+BETTER_AUTH_URL="http://localhost:3000"
+SITE_URL="http://localhost:3000"
+
+# CORS Configuration
+ALLOWED_ORIGIN="http://localhost:3000"
+
+# Email Configuration (Resend)
+RESEND_API_KEY="re_xxxxxxxxxxxxxxxxxxxxx"
+RESEND_FROM="RLink <noreply@yourdomain.com>"
+
+# Security
+BETTER_AUTH_SECRET="your-secret-key-here-min-32-chars"
+CRON_SECRET="your-cron-secret-here"
+REVALIDATION_SECRET="your-revalidation-secret-here"
+```
+
+<Accordion title="Environment Variables Explained">
+  | Variable | Purpose | Required |
+  | --- | --- | --- |
+  | `DATABASE_URL` | Neon PostgreSQL connection string | ✅ Yes |
+  | `NEXT_PUBLIC_APP_URL` | Public site URL (used by auth client) | ✅ Yes |
+  | `BETTER_AUTH_URL` | Auth origin fallback | ⚠️ Optional |
+  | `SITE_URL` | For health checks and cache tooling | ⚠️ Optional |
+  | `ALLOWED_ORIGIN` | Production browser origin for API CORS | ✅ Yes (Production) |
+  | `RESEND_API_KEY` | Resend API key for sending emails | ✅ Yes |
+  | `RESEND_FROM` | Default "from" email address | ⚠️ Optional |
+  | `BETTER_AUTH_SECRET` | Secret for Better Auth (min 32 chars) | ✅ Yes |
+  | `CRON_SECRET` | Bearer token for cron endpoints | ✅ Yes (Production) |
+  | `REVALIDATION_SECRET` | Bearer token for cache-clear APIs | ⚠️ Optional |
+</Accordion>
+
+### 4. Database Setup
+
+#### Generate and Apply Migrations
+
+The repository includes pre-generated migrations in the `drizzle/` directory. Apply them to your database:
+
+```bash
+npx drizzle-kit migrate
+```
+
+#### Alternative: Push Schema Directly (Development Only)
+
+For rapid local iteration, you can push the schema directly without migrations:
+
+```bash
+npx drizzle-kit push
+```
+
+<Warning>
+  Use `drizzle-kit push` only in development with disposable databases. Always use proper migrations for production.
+</Warning>
+
+#### Generate New Migrations (After Schema Changes)
+
+If you modify `db/schema.ts` or `db/auth-schema.ts`:
+
+```bash
+npx drizzle-kit generate
+npx drizzle-kit migrate
+```
+
+## Development Server
+
+Start the development server:
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### Default Routes
+
+- **Login**: `/login`
+- **Dashboard**: `/home`
+- **Forgot Password**: `/forgot-password`
+- **Reset Password**: `/reset-password`
+
+<Note>
+  The dashboard (`/home/*`) uses client-side protection via `ProtectedRoute` component and authenticated API routes.
+</Note>
+
+## Project Structure Overview
+
+```text
+rlink/
+├── app/                    # Next.js App Router
+│   ├── api/               # API route handlers
+│   ├── home/              # Authenticated dashboard
+│   ├── login/             # Authentication pages
+│   └── globals.css        # Global styles
+├── components/            # Shared UI components
+├── db/                    # Database schemas
+│   ├── schema.ts          # Application tables
+│   └── auth-schema.ts     # Better Auth tables
+├── drizzle/               # SQL migrations
+├── hooks/                 # React hooks
+├── lib/                   # Utilities and helpers
+│   ├── cms/              # CMS logic
+│   ├── crm/              # CRM logic
+│   └── iam/              # IAM logic
+├── templates/email/       # React Email templates
+└── public/                # Static assets
+```
+
+## Available Scripts
+
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start development server |
+| `npm run build` | Build for production |
+| `npm run start` | Start production server |
+| `npm run lint` | Run ESLint |
+| `npm test` | Run Jest tests |
+| `npm run test:watch` | Run tests in watch mode |
+
+## Verifying Your Setup
+
+### 1. Check Database Connection
+
+The application should connect to your Neon database on startup. Check the terminal for any connection errors.
+
+### 2. Access the Login Page
+
+Navigate to `http://localhost:3000/login` and ensure the page loads correctly.
+
+### 3. Run Tests
+
+```bash
+npm test
+```
+
+All tests should pass if the setup is correct.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Architecture Overview" icon="sitemap" href="/architecture">
+    Understand the system design
+  </Card>
+
+  <Card title="Database Schema" icon="database" href="/database/schema">
+    Learn about the data models
+  </Card>
+
+  <Card title="Authentication" icon="lock" href="/features/authentication">
+    Explore auth implementation
+  </Card>
+
+  <Card title="API Reference" icon="code" href="/api-reference">
+    Review available endpoints
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Database Connection Errors">
+    - Verify your `DATABASE_URL` is correct
+    - Ensure your Neon database is active and accessible
+    - Check that SSL mode is properly configured in the connection string
+    - Confirm firewall settings allow database connections
+  </Accordion>
+
+  <Accordion title="Module Not Found Errors">
+    - Delete `node_modules/` and `package-lock.json`
+    - Run `npm install` again
+    - Ensure you're using a compatible Node.js version (LTS recommended)
+  </Accordion>
+
+  <Accordion title="Port Already in Use">
+    If port 3000 is already in use:
+
+    ```bash
+    # Find and kill the process using port 3000
+    lsof -ti:3000 | xargs kill -9
+    
+    # Or use a different port
+    PORT=3001 npm run dev
+    ```
+  </Accordion>
+
+  <Accordion title="Better Auth Errors">
+    - Ensure `BETTER_AUTH_SECRET` is at least 32 characters
+    - Verify `NEXT_PUBLIC_APP_URL` matches your actual URL
+    - Check that auth tables were created in the database
+  </Accordion>
+</AccordionGroup>
+
+<Warning>
+  **\[Inference\]** If you encounter issues not covered here, check the application logs for specific error messages. The error messages will typically indicate the root cause.
+</Warning>

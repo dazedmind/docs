@@ -1,0 +1,1181 @@
+---
+title: "API Reference"
+description: "Complete API endpoint documentation for RLink"
+---
+
+## Overview
+
+RLink follows RESTful API conventions with endpoints organized by module (CMS, CRM, IAM). All API routes are located in the `app/api/` directory.
+
+<Note>
+  All API endpoints require authentication unless explicitly marked as public. Include session cookies in requests.
+</Note>
+
+## Base URL
+
+**Development**: `http://localhost:3000/api`  
+**Production**: `https://your-domain.com/api`
+
+## Authentication
+
+### POST /api/auth/login
+
+Authenticate user and create session.
+
+**Request Body**:
+```json
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "user": {
+    "id": "uuid",
+    "email": "user@example.com",
+    "name": "John Doe"
+  },
+  "session": {
+    "token": "session_token",
+    "expiresAt": "2026-04-30T12:00:00Z"
+  }
+}
+```
+
+### POST /api/auth/logout
+
+Terminate current session.
+
+**Response** (200 OK):
+```json
+{
+  "message": "Logged out successfully"
+}
+```
+
+### POST /api/auth/forgot-password
+
+Request password reset email.
+
+**Request Body**:
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "message": "Password reset email sent"
+}
+```
+
+### POST /api/auth/reset-password
+
+Reset password using token from email.
+
+**Request Body**:
+```json
+{
+  "token": "reset_token",
+  "password": "new_password123"
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "message": "Password reset successful"
+}
+```
+
+## CMS Endpoints
+
+### Projects
+
+#### GET /api/cms/projects
+
+List all projects with pagination.
+
+**Query Parameters**:
+- `page` (number): Page number (default: 1)
+- `limit` (number): Items per page (default: 10)
+- `status` (string): Filter by status (`active`, `upcoming`, `completed`, `on-hold`)
+- `type` (string): Filter by type (`residential`, `commercial`, `mixed-use`)
+- `sort` (string): Sort field (e.g., `name`, `created_at`)
+- `order` (string): Sort order (`asc`, `desc`)
+
+**Response** (200 OK):
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "name": "Arcoe Residence",
+      "slug": "arcoe-residence",
+      "status": "active",
+      "type": "residential",
+      "stage": "pre-selling",
+      "location": "123 Main St, City",
+      "price_range": { "min": 5000000, "max": 8000000 },
+      "cover_photo": "/uploads/projects/arcoe.jpg",
+      "published": true,
+      "publish_date": "2026-01-01T00:00:00Z",
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-03-30T00:00:00Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 25,
+    "totalPages": 3
+  }
+}
+```
+
+#### GET /api/cms/projects/[id]
+
+Get single project by ID.
+
+**Response** (200 OK):
+```json
+{
+  "id": "uuid",
+  "name": "Arcoe Residence",
+  "slug": "arcoe-residence",
+  "description": "Luxury residential project...",
+  "status": "active",
+  "type": "residential",
+  "stage": "pre-selling",
+  "location": "123 Main St, City",
+  "coordinates": { "lat": 14.5995, "lng": 120.9842 },
+  "nearby_landmarks": [
+    { "name": "Mall", "distance": "1km" }
+  ],
+  "amenities": ["pool", "gym", "playground"],
+  "price_range": { "min": 5000000, "max": 8000000 },
+  "cover_photo": "/uploads/projects/arcoe.jpg",
+  "seo_title": "Arcoe Residence - Luxury Living",
+  "seo_description": "Experience luxury living...",
+  "seo_keywords": "luxury, residence, property",
+  "published": true,
+  "publish_date": "2026-01-01T00:00:00Z",
+  "created_at": "2026-01-01T00:00:00Z",
+  "updated_at": "2026-03-30T00:00:00Z",
+  "galleries": [
+    {
+      "id": "uuid",
+      "image_url": "/uploads/galleries/1.jpg",
+      "caption": "Living room",
+      "display_order": 1,
+      "house_model": "Model A"
+    }
+  ]
+}
+```
+
+#### POST /api/cms/projects
+
+Create new project.
+
+**Request Body**:
+```json
+{
+  "name": "New Project",
+  "slug": "new-project",
+  "description": "Project description",
+  "status": "active",
+  "type": "residential",
+  "stage": "pre-selling",
+  "location": "123 Main St",
+  "coordinates": { "lat": 14.5995, "lng": 120.9842 },
+  "nearby_landmarks": [],
+  "amenities": [],
+  "price_range": { "min": 5000000, "max": 8000000 },
+  "cover_photo": "/uploads/projects/cover.jpg",
+  "seo_title": "SEO Title",
+  "seo_description": "SEO Description",
+  "seo_keywords": "keyword1, keyword2",
+  "published": true,
+  "publish_date": "2026-04-01T00:00:00Z"
+}
+```
+
+**Response** (201 Created):
+```json
+{
+  "id": "uuid",
+  "message": "Project created successfully"
+}
+```
+
+#### PATCH /api/cms/projects/[id]
+
+Update existing project.
+
+**Request Body** (partial update):
+```json
+{
+  "name": "Updated Name",
+  "status": "completed"
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "message": "Project updated successfully"
+}
+```
+
+<Warning>
+  Only fields included in the request body will be updated. All other fields remain unchanged.
+</Warning>
+
+#### DELETE /api/cms/projects/[id]
+
+Delete project.
+
+**Response** (200 OK):
+```json
+{
+  "message": "Project deleted successfully"
+}
+```
+
+### Project Galleries
+
+#### POST /api/cms/projects/[id]/galleries
+
+Add photos to project gallery.
+
+**Request Body**:
+```json
+{
+  "images": [
+    {
+      "image_url": "/uploads/galleries/1.jpg",
+      "caption": "Living room",
+      "display_order": 1,
+      "house_model": "Model A"
+    }
+  ]
+}
+```
+
+**Response** (201 Created):
+```json
+{
+  "message": "Gallery images added successfully"
+}
+```
+
+#### DELETE /api/cms/projects/galleries/[id]
+
+Delete gallery image.
+
+**Response** (200 OK):
+```json
+{
+  "message": "Gallery image deleted successfully"
+}
+```
+
+### Articles
+
+#### GET /api/cms/articles
+
+List articles with filtering.
+
+**Query Parameters**:
+- `page`, `limit`, `sort`, `order` (same as projects)
+- `type` (string): Filter by type (`news`, `announcement`, `blog`)
+- `published` (boolean): Filter by published status
+
+**Response** (200 OK):
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "title": "Company News",
+      "slug": "company-news",
+      "excerpt": "Brief summary...",
+      "type": "news",
+      "cover_image": "/uploads/articles/cover.jpg",
+      "author": {
+        "id": "uuid",
+        "name": "John Doe"
+      },
+      "tags": ["news", "company"],
+      "published": true,
+      "publish_date": "2026-03-30T00:00:00Z",
+      "created_at": "2026-03-30T00:00:00Z"
+    }
+  ],
+  "pagination": { ... }
+}
+```
+
+#### GET /api/cms/articles/[id]
+
+Get article with full content.
+
+**Response** (200 OK):
+```json
+{
+  "id": "uuid",
+  "title": "Company News",
+  "slug": "company-news",
+  "content": "# Article Content\n\nMarkdown content here...",
+  "excerpt": "Brief summary...",
+  "type": "news",
+  "cover_image": "/uploads/articles/cover.jpg",
+  "author": {
+    "id": "uuid",
+    "name": "John Doe",
+    "email": "john@example.com"
+  },
+  "tags": ["news", "company"],
+  "published": true,
+  "publish_date": "2026-03-30T00:00:00Z",
+  "seo_title": "SEO Title",
+  "seo_description": "SEO Description",
+  "created_at": "2026-03-30T00:00:00Z",
+  "updated_at": "2026-03-30T00:00:00Z"
+}
+```
+
+#### POST /api/cms/articles
+
+Create article.
+
+**Request Body**:
+```json
+{
+  "title": "New Article",
+  "slug": "new-article",
+  "content": "# Article\n\nMarkdown content...",
+  "excerpt": "Summary",
+  "type": "news",
+  "cover_image": "/uploads/articles/cover.jpg",
+  "tags": ["news"],
+  "published": true,
+  "publish_date": "2026-04-01T00:00:00Z",
+  "seo_title": "SEO Title",
+  "seo_description": "SEO Description"
+}
+```
+
+**Response** (201 Created):
+```json
+{
+  "id": "uuid",
+  "message": "Article created successfully"
+}
+```
+
+### Careers
+
+#### GET /api/cms/careers
+
+List job postings.
+
+**Query Parameters**: Same as projects, plus:
+- `department` (string): Filter by department
+- `employment_type` (string): Filter by type (`full-time`, `part-time`, `contract`)
+
+**Response** (200 OK):
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "title": "Software Engineer",
+      "slug": "software-engineer",
+      "department": "IT",
+      "location": "Manila, Philippines",
+      "employment_type": "full-time",
+      "salary_range": { "min": 50000, "max": 80000, "currency": "PHP" },
+      "published": true,
+      "publish_date": "2026-03-30T00:00:00Z",
+      "created_at": "2026-03-30T00:00:00Z"
+    }
+  ],
+  "pagination": { ... }
+}
+```
+
+### Amenities
+
+#### GET /api/cms/amenities
+
+List all amenities.
+
+**Response** (200 OK):
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "name": "Swimming Pool",
+      "description": "Olympic-sized pool...",
+      "icon": "pool",
+      "cover_photo": "/uploads/amenities/pool.jpg",
+      "category": "recreational",
+      "created_at": "2026-01-01T00:00:00Z"
+    }
+  ]
+}
+```
+
+## CRM Endpoints
+
+### Leads
+
+#### GET /api/crm/leads
+
+List leads with filtering.
+
+**Query Parameters**:
+- `page`, `limit`, `sort`, `order`
+- `status` (string): Filter by status (`new`, `contacted`, `qualified`, `converted`, `lost`)
+- `source` (string): Filter by source (`website`, `referral`, `event`, `social`)
+- `assigned_to` (uuid): Filter by assigned user
+
+**Response** (200 OK):
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "first_name": "John",
+      "last_name": "Doe",
+      "email": "john@example.com",
+      "phone": "+63 912 345 6789",
+      "source": "website",
+      "status": "new",
+      "interest": "Residential property",
+      "notes": "Interested in Arcoe Residence",
+      "assigned_to": {
+        "id": "uuid",
+        "name": "Agent Name"
+      },
+      "created_at": "2026-03-30T00:00:00Z",
+      "updated_at": "2026-03-30T00:00:00Z"
+    }
+  ],
+  "pagination": { ... }
+}
+```
+
+#### POST /api/crm/leads
+
+Create lead.
+
+**Request Body**:
+```json
+{
+  "first_name": "John",
+  "last_name": "Doe",
+  "email": "john@example.com",
+  "phone": "+63 912 345 6789",
+  "source": "website",
+  "status": "new",
+  "interest": "Residential property",
+  "notes": "Interested in Arcoe Residence",
+  "assigned_to": "user_uuid"
+}
+```
+
+**Response** (201 Created):
+```json
+{
+  "id": "uuid",
+  "message": "Lead created successfully"
+}
+```
+
+#### PATCH /api/crm/leads/[id]
+
+Update lead status or assignment.
+
+**Request Body**:
+```json
+{
+  "status": "contacted",
+  "notes": "Called on March 30, 2026"
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "message": "Lead updated successfully"
+}
+```
+
+### Reservations
+
+#### GET /api/crm/reservations
+
+List reservations.
+
+**Query Parameters**:
+- `page`, `limit`, `sort`, `order`
+- `status` (string): Filter by status (`pending`, `confirmed`, `cancelled`)
+- `payment_status` (string): Filter by payment (`unpaid`, `partial`, `paid`)
+- `project_name` (string): Filter by project
+
+**Response** (200 OK):
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "inventory": {
+        "id": "uuid",
+        "inventory_code": "AR-B1-L5",
+        "block": "B1",
+        "lot": "L5",
+        "house_model": "Model A",
+        "price": 6500000
+      },
+      "project_name": "Arcoe Residence",
+      "client_name": "Jane Smith",
+      "contact_number": "+63 912 345 6789",
+      "email": "jane@example.com",
+      "reservation_date": "2026-03-30T00:00:00Z",
+      "status": "confirmed",
+      "payment_status": "partial",
+      "notes": "Paid 20% down payment",
+      "created_by": {
+        "id": "uuid",
+        "name": "Agent Name"
+      },
+      "created_at": "2026-03-30T00:00:00Z"
+    }
+  ],
+  "pagination": { ... }
+}
+```
+
+#### POST /api/crm/reservations
+
+Create reservation and link to inventory.
+
+**Request Body**:
+```json
+{
+  "inventory_id": "uuid",
+  "project_name": "Arcoe Residence",
+  "client_name": "Jane Smith",
+  "contact_number": "+63 912 345 6789",
+  "email": "jane@example.com",
+  "reservation_date": "2026-03-30T00:00:00Z",
+  "status": "pending",
+  "payment_status": "unpaid",
+  "notes": "Initial reservation"
+}
+```
+
+**Response** (201 Created):
+```json
+{
+  "id": "uuid",
+  "message": "Reservation created successfully"
+}
+```
+
+<Note>
+  Creating a reservation automatically updates the linked inventory unit's `sold_to` field and changes its status to `reserved`.
+</Note>
+
+### Inventory
+
+#### GET /api/crm/inventory
+
+List inventory units with project details.
+
+**Query Parameters**:
+- `page`, `limit`, `sort`, `order`
+- `project_id` (uuid): Filter by project
+- `status` (string): Filter by status (`available`, `reserved`, `sold`)
+- `block` (string): Filter by block
+- `house_model` (string): Filter by model
+
+**Response** (200 OK):
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "project": {
+        "id": "uuid",
+        "name": "Arcoe Residence",
+        "slug": "arcoe-residence"
+      },
+      "inventory_code": "AR-B1-L5",
+      "block": "B1",
+      "lot": "L5",
+      "house_model": "Model A",
+      "floor_area": 120.5,
+      "lot_area": 80.0,
+      "price": 6500000,
+      "status": "available",
+      "sold_to": null,
+      "created_at": "2026-01-01T00:00:00Z"
+    }
+  ],
+  "pagination": { ... }
+}
+```
+
+#### POST /api/crm/inventory
+
+Add inventory unit to project.
+
+**Request Body**:
+```json
+{
+  "project_id": "uuid",
+  "block": "B1",
+  "lot": "L5",
+  "house_model": "Model A",
+  "floor_area": 120.5,
+  "lot_area": 80.0,
+  "price": 6500000,
+  "status": "available"
+}
+```
+
+**Response** (201 Created):
+```json
+{
+  "id": "uuid",
+  "inventory_code": "AR-B1-L5",
+  "message": "Inventory unit created successfully"
+}
+```
+
+<Note>
+  The `inventory_code` is auto-generated based on project initials, block, and lot. Format: `{ProjectInitials}-{Block}-{Lot}`
+</Note>
+
+#### PATCH /api/projects/inventory
+
+Special endpoint to update inventory (used by reservation flow).
+
+**Request Body**:
+```json
+{
+  "inventory_id": "uuid",
+  "sold_to": "reservation_uuid",
+  "status": "reserved"
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "message": "Inventory updated successfully"
+}
+```
+
+### Inquiries
+
+#### GET /api/crm/inquiries
+
+List customer inquiries.
+
+**Query Parameters**:
+- `page`, `limit`, `sort`, `order`
+- `status` (string): Filter by status (`unread`, `read`, `responded`, `closed`)
+
+**Response** (200 OK):
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "name": "John Doe",
+      "email": "john@example.com",
+      "phone": "+63 912 345 6789",
+      "subject": "Property Inquiry",
+      "message": "I'm interested in...",
+      "status": "unread",
+      "responded_by": null,
+      "response": null,
+      "created_at": "2026-03-30T00:00:00Z",
+      "updated_at": "2026-03-30T00:00:00Z"
+    }
+  ],
+  "pagination": { ... }
+}
+```
+
+#### PATCH /api/crm/inquiries/[id]
+
+Update inquiry status or add response.
+
+**Request Body**:
+```json
+{
+  "status": "responded",
+  "response": "Thank you for your inquiry..."
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "message": "Inquiry updated successfully"
+}
+```
+
+### Newsletter
+
+#### GET /api/crm/newsletters
+
+List newsletter subscriptions.
+
+**Query Parameters**:
+- `page`, `limit`
+- `status` (string): Filter by status (`subscribed`, `unsubscribed`)
+
+**Response** (200 OK):
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "email": "subscriber@example.com",
+      "name": "John Doe",
+      "status": "subscribed",
+      "subscribed_at": "2026-01-01T00:00:00Z",
+      "unsubscribed_at": null
+    }
+  ],
+  "pagination": { ... }
+}
+```
+
+#### POST /api/crm/newsletters
+
+Add newsletter subscription.
+
+**Request Body**:
+```json
+{
+  "email": "subscriber@example.com",
+  "name": "John Doe"
+}
+```
+
+**Response** (201 Created):
+```json
+{
+  "id": "uuid",
+  "message": "Subscription created successfully"
+}
+```
+
+### Campaigns
+
+#### GET /api/crm/campaigns
+
+List email campaigns.
+
+**Query Parameters**:
+- `page`, `limit`, `sort`, `order`
+- `status` (string): Filter by status (`draft`, `scheduled`, `sent`)
+
+**Response** (200 OK):
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "name": "March Newsletter",
+      "subject": "Monthly Updates",
+      "content": "# Newsletter\n\nMarkdown content...",
+      "recipients": ["all"],
+      "status": "sent",
+      "scheduled_at": null,
+      "sent_at": "2026-03-30T00:00:00Z",
+      "created_by": {
+        "id": "uuid",
+        "name": "Admin User"
+      },
+      "created_at": "2026-03-30T00:00:00Z"
+    }
+  ],
+  "pagination": { ... }
+}
+```
+
+#### POST /api/crm/campaigns
+
+Create campaign.
+
+**Request Body**:
+```json
+{
+  "name": "April Newsletter",
+  "subject": "Monthly Updates",
+  "content": "# Newsletter\n\nMarkdown content...",
+  "recipients": ["all"],
+  "status": "draft"
+}
+```
+
+**Response** (201 Created):
+```json
+{
+  "id": "uuid",
+  "message": "Campaign created successfully"
+}
+```
+
+#### POST /api/crm/campaigns/[id]/send
+
+Send campaign immediately or schedule for later.
+
+**Request Body**:
+```json
+{
+  "scheduled_at": "2026-04-01T09:00:00Z"
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "message": "Campaign scheduled successfully"
+}
+```
+
+<Note>
+  If `scheduled_at` is omitted, the campaign sends immediately. Otherwise, it's queued for the specified time.
+</Note>
+
+## IAM Endpoints
+
+### Users
+
+#### GET /api/iam/users
+
+List users with role filtering.
+
+**Query Parameters**:
+- `page`, `limit`, `sort`, `order`
+- `department` (string): Filter by department
+- `emailVerified` (boolean): Filter by verification status
+
+**Response** (200 OK):
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "email": "user@example.com",
+      "name": "John Doe",
+      "image": "/uploads/avatars/user.jpg",
+      "emailVerified": true,
+      "department": {
+        "id": "uuid",
+        "name": "IT"
+      },
+      "createdAt": "2026-01-01T00:00:00Z",
+      "updatedAt": "2026-03-30T00:00:00Z"
+    }
+  ],
+  "pagination": { ... }
+}
+```
+
+#### POST /api/iam/users
+
+Create user account.
+
+**Request Body**:
+```json
+{
+  "email": "newuser@example.com",
+  "name": "Jane Smith",
+  "password": "generated_password",
+  "department_id": "uuid",
+  "emailVerified": false
+}
+```
+
+**Response** (201 Created):
+```json
+{
+  "id": "uuid",
+  "message": "User created successfully"
+}
+```
+
+<Note>
+  New users receive a welcome email with onboarding instructions via Resend integration.
+</Note>
+
+#### PATCH /api/iam/users/[id]
+
+Update user details.
+
+**Request Body**:
+```json
+{
+  "name": "Updated Name",
+  "department_id": "new_department_uuid"
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "message": "User updated successfully"
+}
+```
+
+#### DELETE /api/iam/users/[id]
+
+Delete user account.
+
+**Response** (200 OK):
+```json
+{
+  "message": "User deleted successfully"
+}
+```
+
+### Module Access
+
+#### GET /api/iam/module-access/[userId]
+
+Get user's module permissions.
+
+**Response** (200 OK):
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "module": "cms",
+      "can_read": true,
+      "can_write": true,
+      "can_delete": false
+    },
+    {
+      "id": "uuid",
+      "module": "crm",
+      "can_read": true,
+      "can_write": false,
+      "can_delete": false
+    }
+  ]
+}
+```
+
+#### POST /api/iam/module-access
+
+Grant module permissions to user.
+
+**Request Body**:
+```json
+{
+  "user_id": "uuid",
+  "module": "cms",
+  "can_read": true,
+  "can_write": true,
+  "can_delete": false
+}
+```
+
+**Response** (201 Created):
+```json
+{
+  "id": "uuid",
+  "message": "Module access granted successfully"
+}
+```
+
+#### PATCH /api/iam/module-access/[id]
+
+Update module permissions.
+
+**Request Body**:
+```json
+{
+  "can_write": true,
+  "can_delete": true
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "message": "Module access updated successfully"
+}
+```
+
+### Activity Logs
+
+#### GET /api/iam/activity-logs
+
+List audit trail with filtering.
+
+**Query Parameters**:
+- `page`, `limit`, `sort`, `order`
+- `user_id` (uuid): Filter by user
+- `module` (string): Filter by module (`cms`, `crm`, `iam`)
+- `action` (string): Filter by action (`create`, `update`, `delete`)
+- `date_from` (ISO date): Filter by start date
+- `date_to` (ISO date): Filter by end date
+
+**Response** (200 OK):
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "user": {
+        "id": "uuid",
+        "name": "John Doe",
+        "email": "john@example.com"
+      },
+      "action": "update",
+      "module": "cms",
+      "resource": "projects",
+      "resource_id": "uuid",
+      "changes": {
+        "before": { "status": "active" },
+        "after": { "status": "completed" }
+      },
+      "ip_address": "192.168.1.1",
+      "user_agent": "Mozilla/5.0...",
+      "created_at": "2026-03-30T12:00:00Z"
+    }
+  ],
+  "pagination": { ... }
+}
+```
+
+<Note>
+  Activity logs are automatically created by the system and cannot be manually added. They have a 90-day retention policy.
+</Note>
+
+## Cron Endpoints
+
+### POST /api/cron/activity-logs-retention
+
+Clean up activity logs older than 90 days.
+
+**Headers**:
+```
+Authorization: Bearer {CRON_SECRET}
+```
+
+**Response** (200 OK):
+```json
+{
+  "deleted": 127,
+  "message": "Activity logs cleaned up successfully"
+}
+```
+
+<Warning>
+  This endpoint is called automatically by Vercel Cron daily. Manual invocation requires the `CRON_SECRET` bearer token.
+</Warning>
+
+## Error Responses
+
+All endpoints return consistent error formats:
+
+### 400 Bad Request
+```json
+{
+  "error": "Validation error",
+  "details": {
+    "email": "Invalid email format"
+  }
+}
+```
+
+### 401 Unauthorized
+```json
+{
+  "error": "Authentication required"
+}
+```
+
+### 403 Forbidden
+```json
+{
+  "error": "Insufficient permissions"
+}
+```
+
+### 404 Not Found
+```json
+{
+  "error": "Resource not found"
+}
+```
+
+### 500 Internal Server Error
+```json
+{
+  "error": "Internal server error",
+  "message": "An unexpected error occurred"
+}
+```
+
+## Rate Limiting
+
+**[Inference]** Rate limiting is implemented server-side to prevent abuse:
+
+- **Authentication endpoints**: 5 requests per minute per IP
+- **Data modification (POST, PATCH, DELETE)**: 30 requests per minute per user
+- **Data retrieval (GET)**: 100 requests per minute per user
+
+<Note>
+  Rate limit headers are included in responses:
+  - `X-RateLimit-Limit`: Maximum requests allowed
+  - `X-RateLimit-Remaining`: Requests remaining
+  - `X-RateLimit-Reset`: Time when limit resets (Unix timestamp)
+</Note>
+
+## Export Data
+
+### GET /api/{module}/{resource}/export
+
+Export data as CSV.
+
+**Example**: `/api/crm/leads/export?status=new`
+
+**Response**: CSV file download
+
+**[Inference]** Available for:
+- Leads
+- Reservations
+- Users
+- Activity Logs
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication Guide" icon="lock" href="/features/authentication">
+    Learn about auth implementation
+  </Card>
+  <Card title="Testing APIs" icon="flask" href="/guides/testing">
+    How to test API endpoints
+  </Card>
+</CardGroup>

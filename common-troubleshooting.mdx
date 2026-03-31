@@ -1,0 +1,694 @@
+---
+title: "Troubleshooting"
+description: "Common issues and solutions for RLink"
+---
+
+## Common Issues
+
+This guide covers frequent issues developers may encounter when working with RLink and their solutions.
+
+## Authentication Issues
+
+### Cannot Log In - "Invalid Credentials"
+
+**Symptoms**: Login fails even with correct email and password
+
+**Possible Causes**:
+1. User account doesn't exist in database
+2. Password hash mismatch
+3. Email not verified (if verification required)
+4. Session configuration issue
+
+**Solutions**:
+
+<Steps>
+  <Step title="Verify User Exists">
+    Connect to your database and check:
+    ```sql
+    SELECT id, email, emailVerified FROM users WHERE email = 'user@example.com';
+    ```
+  </Step>
+
+  <Step title="Check Better Auth Configuration">
+    Verify environment variables:
+    ```bash
+    BETTER_AUTH_SECRET # Must be at least 32 characters
+    NEXT_PUBLIC_APP_URL # Must match actual URL
+    DATABASE_URL # Must be correct
+    ```
+  </Step>
+
+  <Step title="Reset Password">
+    Use the "Forgot Password" flow to reset the user's password
+  </Step>
+
+  <Step title="Check Browser Console">
+    Open Developer Tools (F12) and check for errors in:
+    - Console tab
+    - Network tab (look for failed API requests)
+  </Step>
+</Steps>
+
+### Session Expires Immediately
+
+**Symptoms**: User logs in successfully but is immediately logged out or session expires
+
+**Possible Causes**:
+1. Cookie domain mismatch
+2. HTTPS/HTTP mismatch
+3. `NEXT_PUBLIC_APP_URL` incorrect
+4. Session secret changed
+
+**Solutions**:
+
+<AccordionGroup>
+  <Accordion title="Check Cookie Settings">
+    Verify in browser DevTools → Application → Cookies:
+    - Cookie domain should match your app domain
+    - Cookie should have `Secure` flag in production
+    - Cookie should have `HttpOnly` flag
+  </Accordion>
+
+  <Accordion title="Verify Environment Variables">
+    ```bash
+    # Development
+    NEXT_PUBLIC_APP_URL="http://localhost:3000"
+    
+    # Production
+    NEXT_PUBLIC_APP_URL="https://your-domain.com"
+    ```
+    
+    <Warning>
+      URLs must match EXACTLY - including protocol (http/https) and no trailing slash
+    </Warning>
+  </Accordion>
+
+  <Accordion title="Clear Cookies and Cache">
+    1. Open DevTools (F12)
+    2. Application tab → Clear storage
+    3. Click "Clear site data"
+    4. Refresh page and try logging in again
+  </Accordion>
+</AccordionGroup>
+
+### 2FA Code Not Accepting
+
+**Symptoms**: 2FA code rejected even when entered correctly
+
+**Possible Causes**:
+1. Time sync issue between server and authenticator app
+2. Code already used (codes are single-use)
+3. Wrong secret configured
+
+**Solutions**:
+
+1. **Check Server Time**: Ensure server time is accurate
+   ```bash
+   date # Should match current time
+   ```
+
+2. **Re-setup 2FA**:
+   - Go to Settings → Security
+   - Disable 2FA
+   - Re-enable and scan new QR code
+   - Test immediately
+
+3. **Use Backup Codes**: If provided during setup, use backup codes to access account
+
+## Database Issues
+
+### "Connection Timeout" Error
+
+**Symptoms**: Application cannot connect to database
+
+**Possible Causes**:
+1. Database is paused/inactive (Neon)
+2. Wrong connection string
+3. SSL mode not configured
+4. Network/firewall blocking connection
+
+**Solutions**:
+
+<Steps>
+  <Step title="Verify Database is Active">
+    Check Neon dashboard - database may be in suspended state. Click to wake it up.
+  </Step>
+
+  <Step title="Check Connection String">
+    ```bash
+    # Must include sslmode=require for Neon
+    DATABASE_URL="postgresql://user:pass@host.neon.tech/db?sslmode=require"
+    ```
+  </Step>
+
+  <Step title="Test Connection">
+    ```bash
+    # Install psql if not available
+    psql "$DATABASE_URL"
+    ```
+    
+    If this fails, the issue is with the connection string or network.
+  </Step>
+
+  <Step title="Check IP Allowlist">
+    If using Neon's IP allowlist feature:
+    - Add your server's IP address
+    - For Vercel, add Vercel's IP ranges
+  </Step>
+</Steps>
+
+### Migration Errors
+
+**Symptoms**: `drizzle-kit migrate` fails with SQL errors
+
+**Possible Causes**:
+1. Migration already applied
+2. Schema conflicts
+3. Manual database changes conflicting with migrations
+
+**Solutions**:
+
+<AccordionGroup>
+  <Accordion title="Check Migration Status">
+    Connect to database and check:
+    ```sql
+    SELECT * FROM __drizzle_migrations ORDER BY created_at DESC;
+    ```
+    
+    This shows which migrations have been applied.
+  </Accordion>
+
+  <Accordion title="Reset Migrations (Development Only)">
+    **⚠️ WARNING: This will delete all data**
+    
+    ```bash
+    # Drop all tables
+    psql "$DATABASE_URL" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+    
+    # Re-run migrations
+    npx drizzle-kit migrate
+    ```
+  </Accordion>
+
+  <Accordion title="Manual Migration Fix">
+    If a specific migration fails:
+    1. Review the generated SQL in `drizzle/` folder
+    2. Apply the failing parts manually via psql
+    3. Mark migration as applied in `__drizzle_migrations` table
+  </Accordion>
+</AccordionGroup>
+
+### "Too Many Connections" Error
+
+**Symptoms**: Database rejects new connections
+
+**Possible Causes**:
+1. Connection pool exhausted
+2. Connections not being closed properly
+3. Too many concurrent API requests
+
+**Solutions**:
+
+1. **Enable Connection Pooling** in Neon dashboard
+
+2. **Check for Connection Leaks**:
+   ```typescript
+   // Bad - connection leak
+   const db = drizzle(connection);
+   // ... never closes
+   
+   // Good - using singleton pattern
+   import { db } from '@/lib/db'; // Reuses connection
+   ```
+
+3. **Implement Connection Limits**:
+   ```typescript
+   // lib/db.ts
+   const pool = new Pool({
+     connectionString: process.env.DATABASE_URL,
+     max: 20, // Maximum pool size
+   });
+   ```
+
+## API Issues
+
+### CORS Errors in Browser
+
+**Symptoms**: `CORS policy: No 'Access-Control-Allow-Origin' header`
+
+**Possible Causes**:
+1. `ALLOWED_ORIGIN` environment variable incorrect
+2. Request from wrong origin
+3. Credentials not included in request
+
+**Solutions**:
+
+<Steps>
+  <Step title="Verify ALLOWED_ORIGIN">
+    ```bash
+    # Must match exact frontend origin
+    ALLOWED_ORIGIN="https://your-domain.com"
+    ```
+    
+    No trailing slash, must include protocol
+  </Step>
+
+  <Step title="Check Request Origin">
+    In browser DevTools → Network → failed request:
+    - Check `Origin` header in request
+    - Should match `ALLOWED_ORIGIN`
+  </Step>
+
+  <Step title="Include Credentials">
+    If making API calls from frontend:
+    ```typescript
+    fetch('/api/endpoint', {
+      credentials: 'include', // Important!
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    ```
+  </Step>
+</Steps>
+
+### 500 Internal Server Error
+
+**Symptoms**: API returns 500 status code
+
+**Possible Causes**:
+1. Unhandled exception in API route
+2. Database query error
+3. Missing environment variable
+
+**Solutions**:
+
+<AccordionGroup>
+  <Accordion title="Check Server Logs">
+    **Development**:
+    Check terminal where `npm run dev` is running
+    
+    **Production (Vercel)**:
+    1. Go to Vercel dashboard
+    2. Select deployment
+    3. Click "Functions" tab
+    4. View error logs
+  </Accordion>
+
+  <Accordion title="Add Error Logging">
+    Wrap API logic in try-catch:
+    ```typescript
+    export async function GET(request: Request) {
+      try {
+        const data = await db.select().from(table);
+        return Response.json(data);
+      } catch (error) {
+        console.error('API Error:', error);
+        return Response.json(
+          { error: 'Internal server error' },
+          { status: 500 }
+        );
+      }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Verify Environment Variables">
+    All required variables set in production:
+    ```bash
+    DATABASE_URL
+    NEXT_PUBLIC_APP_URL
+    BETTER_AUTH_SECRET
+    RESEND_API_KEY
+    # etc.
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Rate Limit Exceeded
+
+**Symptoms**: API returns 429 status code
+
+**Possible Causes**:
+1. Too many requests from same IP/user
+2. Rate limit threshold too low
+3. Infinite loop making requests
+
+**Solutions**:
+
+1. **Wait and Retry**: Rate limits reset after time period
+
+2. **Check for Request Loops**:
+   ```typescript
+   // Bad - infinite loop
+   useEffect(() => {
+     fetchData(); // Re-runs on every render
+   });
+   
+   // Good - runs once
+   useEffect(() => {
+     fetchData();
+   }, []); // Empty dependency array
+   ```
+
+3. **[Inference] Adjust Rate Limits**: If legitimate high traffic, adjust rate limiting middleware
+
+## Email Issues
+
+### Emails Not Sending
+
+**Symptoms**: Users don't receive welcome emails, password resets, etc.
+
+**Possible Causes**:
+1. Invalid Resend API key
+2. Sending domain not verified
+3. Email in spam folder
+4. Resend account limits reached
+
+**Solutions**:
+
+<Steps>
+  <Step title="Verify Resend Configuration">
+    ```bash
+    RESEND_API_KEY="re_..." # Check in Resend dashboard
+    RESEND_FROM="RLink <noreply@yourdomain.com>" # Must use verified domain
+    ```
+  </Step>
+
+  <Step title="Check Resend Dashboard">
+    1. Go to [resend.com/emails](https://resend.com/emails)
+    2. Check "Logs" for delivery status
+    3. Look for error messages
+  </Step>
+
+  <Step title="Verify Domain">
+    In Resend dashboard:
+    - Go to Domains
+    - Ensure domain has green checkmark
+    - Add DNS records if not verified
+  </Step>
+
+  <Step title="Check Spam Folder">
+    Test emails often go to spam. Check:
+    - Spam/Junk folder
+    - Promotions tab (Gmail)
+  </Step>
+</Steps>
+
+### Email Templates Not Rendering
+
+**Symptoms**: Emails send but look broken or unstyled
+
+**Possible Causes**:
+1. React Email component error
+2. Missing styles
+3. Email client compatibility
+
+**Solutions**:
+
+1. **Preview Templates Locally**:
+   ```bash
+   npx react-email dev
+   ```
+   
+   Open http://localhost:3000 to preview templates
+
+2. **Check Template Syntax**:
+   ```typescript
+   // templates/email/welcome.tsx
+   import { Html, Head, Body, Container } from '@react-email/components';
+   
+   export default function WelcomeEmail({ userName }: { userName: string }) {
+     return (
+       <Html>
+         <Head />
+         <Body>
+           <Container>
+             <h1>Welcome, {userName}!</h1>
+           </Container>
+         </Body>
+       </Html>
+     );
+   }
+   ```
+
+3. **Test Across Email Clients**: Use [Litmus](https://litmus.com) or similar to test rendering
+
+## Performance Issues
+
+### Slow Page Load Times
+
+**Symptoms**: Pages take >3 seconds to load
+
+**Possible Causes**:
+1. Large database queries without pagination
+2. Missing indexes on database
+3. Too many API calls
+4. Large images not optimized
+
+**Solutions**:
+
+<AccordionGroup>
+  <Accordion title="Enable Pagination">
+    ```typescript
+    // Bad - loads all records
+    const projects = await db.select().from(projectsTable);
+    
+    // Good - paginated
+    const projects = await db
+      .select()
+      .from(projectsTable)
+      .limit(10)
+      .offset((page - 1) * 10);
+    ```
+  </Accordion>
+
+  <Accordion title="Add Database Indexes">
+    ```sql
+    -- Index frequently queried columns
+    CREATE INDEX idx_projects_status ON projects(status);
+    CREATE INDEX idx_leads_created_at ON leads(created_at);
+    ```
+  </Accordion>
+
+  <Accordion title="Use TanStack Query Caching">
+    ```typescript
+    const { data } = useQuery({
+      queryKey: ['projects'],
+      queryFn: fetchProjects,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      cacheTime: 10 * 60 * 1000, // 10 minutes
+    });
+    ```
+  </Accordion>
+
+  <Accordion title="Optimize Images">
+    Use Next.js Image component:
+    ```tsx
+    import Image from 'next/image';
+    
+    <Image
+      src="/uploads/large-image.jpg"
+      alt="Project"
+      width={800}
+      height={600}
+      quality={75} // Reduce quality for faster load
+      placeholder="blur" // Show blur while loading
+    />
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Memory Leaks
+
+**Symptoms**: Application becomes slow over time, eventual crashes
+
+**Possible Causes**:
+1. Event listeners not cleaned up
+2. Timers not cleared
+3. Large objects kept in memory
+
+**Solutions**:
+
+```typescript
+// Clean up effect hooks
+useEffect(() => {
+  const interval = setInterval(() => {
+    // Do something
+  }, 1000);
+  
+  return () => clearInterval(interval); // Cleanup!
+}, []);
+
+// Remove event listeners
+useEffect(() => {
+  const handleResize = () => {
+    // Handle resize
+  };
+  
+  window.addEventListener('resize', handleResize);
+  return () => window.removeEventListener('resize', handleResize);
+}, []);
+```
+
+## Build & Deployment Issues
+
+### Build Fails on Vercel
+
+**Symptoms**: Deployment fails during build step
+
+**Possible Causes**:
+1. TypeScript errors
+2. Missing environment variables
+3. Dependency issues
+
+**Solutions**:
+
+<Steps>
+  <Step title="Run Build Locally">
+    ```bash
+    npm run build
+    ```
+    
+    This will show the same errors Vercel encounters
+  </Step>
+
+  <Step title="Fix TypeScript Errors">
+    ```bash
+    # Check types
+    npx tsc --noEmit
+    
+    # Fix errors or suppress with @ts-ignore (use sparingly)
+    ```
+  </Step>
+
+  <Step title="Check Environment Variables">
+    Ensure all required variables are set in Vercel dashboard
+  </Step>
+
+  <Step title="Clear Build Cache">
+    In Vercel:
+    1. Go to Settings
+    2. General → Build & Development
+    3. Click "Clear Build Cache"
+    4. Redeploy
+  </Step>
+</Steps>
+
+### Vercel Function Timeout
+
+**Symptoms**: API routes timeout after 10 seconds
+
+**Possible Causes**:
+1. Slow database queries
+2. External API calls taking too long
+3. Heavy computation
+
+**Solutions**:
+
+1. **Optimize Queries**: Add indexes, reduce data fetched
+
+2. **Upgrade Vercel Plan**: Pro/Enterprise have longer timeouts (60s-900s)
+
+3. **Move to Background Job**:
+   ```typescript
+   // Instead of processing in API route
+   // Queue job for background processing
+   await queue.add('process-data', { dataId });
+   ```
+
+## Development Environment Issues
+
+### Module Not Found
+
+**Symptoms**: Import errors like `Cannot find module '@/lib/db'`
+
+**Possible Causes**:
+1. TypeScript path aliases not configured
+2. Missing dependencies
+3. Wrong import path
+
+**Solutions**:
+
+<AccordionGroup>
+  <Accordion title="Check tsconfig.json">
+    ```json
+    {
+      "compilerOptions": {
+        "baseUrl": ".",
+        "paths": {
+          "@/*": ["./*"]
+        }
+      }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Reinstall Dependencies">
+    ```bash
+    rm -rf node_modules package-lock.json
+    npm install
+    ```
+  </Accordion>
+
+  <Accordion title="Fix Import Path">
+    ```typescript
+    // Wrong
+    import { db } from 'lib/db';
+    
+    // Right
+    import { db } from '@/lib/db';
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Hot Reload Not Working
+
+**Symptoms**: Changes to files don't trigger page refresh
+
+**Possible Causes**:
+1. File watcher limit reached
+2. Next.js cache issue
+3. Wrong file location
+
+**Solutions**:
+
+1. **Increase File Watcher Limit** (Linux/Mac):
+   ```bash
+   echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf
+   sudo sysctl -p
+   ```
+
+2. **Clear Next.js Cache**:
+   ```bash
+   rm -rf .next
+   npm run dev
+   ```
+
+3. **Restart Dev Server**: Stop and restart `npm run dev`
+
+## Getting More Help
+
+If your issue isn't covered here:
+
+<CardGroup cols={2}>
+  <Card title="Check Logs" icon="file-lines">
+    - Browser console (F12)
+    - Server terminal output
+    - Vercel deployment logs
+  </Card>
+  <Card title="Search Issues" icon="magnifying-glass">
+    Search for similar issues in:
+    - Next.js GitHub issues
+    - Better Auth documentation
+    - Drizzle ORM discussions
+  </Card>
+</CardGroup>
+
+<Note>
+  When reporting issues, always include:
+  - Error message (full stack trace)
+  - Steps to reproduce
+  - Environment (dev/production)
+  - Browser/Node version
+</Note>

@@ -1,0 +1,775 @@
+---
+title: "Maintenance Guide"
+description: "Essential maintenance tasks and best practices for RLink developers"
+---
+
+## Overview
+
+This guide provides comprehensive information for developers who will maintain and extend RLink. It covers routine maintenance tasks, code organization, best practices, and common workflows.
+
+## Daily Development Workflow
+
+### Starting Work
+
+<Steps>
+  <Step title="Pull Latest Changes">
+    ```bash
+    git checkout main
+    git pull origin main
+    ```
+  </Step>
+  <Step title="Create Feature Branch">
+    ```bash
+    git checkout -b feature/your-feature-name
+    # or
+    git checkout -b fix/bug-description
+    ```
+  </Step>
+  <Step title="Install Dependencies (if needed)">
+    ```bash
+    npm install
+    ```
+  </Step>
+  <Step title="Start Dev Server">
+    ```bash
+    npm run dev
+    ```
+  </Step>
+</Steps>
+
+### Before Committing
+
+<Checklist>
+  <Check>Run linter: `npm run lint`</Check>
+  <Check>Run tests: `npm test`</Check>
+  <Check>Check TypeScript: `npx tsc --noEmit`</Check>
+  <Check>Test changes locally</Check>
+  <Check>Review changed files</Check>
+</Checklist>
+
+### Committing Changes
+
+Follow conventional commit format:
+
+```bash
+# Format: <type>(<scope>): <description>
+
+# Examples:
+git commit -m "feat(cms): add project photo gallery"
+git commit -m "fix(crm): resolve reservation linking bug"
+git commit -m "docs: update API documentation"
+git commit -m "refactor(iam): improve user query performance"
+```
+
+**Commit Types**:
+
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation changes
+- `refactor`: Code refactoring
+- `test`: Adding tests
+- `chore`: Maintenance tasks
+
+## Code Organization
+
+### Directory Structure Guidelines
+
+<AccordionGroup>
+  <Accordion title="API Routes (app/api/)">
+    **Pattern**: `/api/{module}/{resource}/route.ts`
+
+    ```text
+    app/api/
+    ├── cms/
+    │   ├── projects/
+    │   │   ├── route.ts          # GET /api/cms/projects (list)
+    │   │   ├── [id]/
+    │   │   │   └── route.ts      # GET/PATCH/DELETE /api/cms/projects/[id]
+    │   │   └── export/
+    │   │       └── route.ts      # GET /api/cms/projects/export (CSV)
+    │   ├── articles/
+    │   └── careers/
+    ├── crm/
+    └── iam/
+    ```
+
+    **Best Practice**: Keep routes RESTful and predictable
+  </Accordion>
+
+  <Accordion title="Business Logic (lib/)">
+    **Pattern**: `/lib/{module}/{purpose}.ts`
+
+    ```text
+    lib/
+    ├── cms/
+    │   ├── types.ts       # TypeScript types/interfaces
+    │   ├── queries.ts     # Database queries
+    │   ├── cache.ts       # Cache helpers
+    │   └── validation.ts  # Input validation schemas
+    ├── crm/
+    ├── iam/
+    ├── db.ts             # Database connection
+    ├── auth.ts           # Auth utilities
+    └── email/            # Email utilities
+    ```
+
+    **Best Practice**: Keep business logic separate from API routes
+  </Accordion>
+
+  <Accordion title="Components (components/)">
+    **Pattern**: Organize by type or feature
+
+    ```text
+    components/
+    ├── layout/
+    │   ├── Navbar.tsx
+    │   ├── Sidebar.tsx
+    │   └── Footer.tsx
+    ├── tables/
+    │   ├── DataTable.tsx
+    │   ├── Pagination.tsx
+    │   └── Filters.tsx
+    ├── modals/
+    │   ├── ConfirmDialog.tsx
+    │   └── FormModal.tsx
+    └── ui/               # shadcn/ui primitives
+        ├── button.tsx
+        ├── input.tsx
+        └── ...
+    ```
+
+    **Best Practice**: Reuse components, avoid duplication
+  </Accordion>
+
+  <Accordion title="Database Schema (db/)">
+    **Pattern**: Separate files by concern
+
+    ```text
+    db/
+    ├── schema.ts         # Application tables
+    ├── auth-schema.ts    # Better Auth tables
+    └── types.ts          # Shared DB types
+    ```
+
+    **Best Practice**: Use Drizzle ORM types, avoid raw SQL when possible
+  </Accordion>
+</AccordionGroup>
+
+## Database Management
+
+### Adding a New Table
+
+<Steps>
+  <Step title="Define Schema">
+    Add to `db/schema.ts`:
+
+    ```typescript
+    import { pgTable, uuid, varchar, timestamp } from 'drizzle-orm/pg-core';
+    
+    export const newTable = pgTable('new_table', {
+      id: uuid('id').defaultRandom().primaryKey(),
+      name: varchar('name', { length: 255 }).notNull(),
+      createdAt: timestamp('created_at').defaultNow().notNull(),
+      updatedAt: timestamp('updated_at').defaultNow().notNull(),
+    });
+    ```
+  </Step>
+  <Step title="Generate Migration">
+    ```bash
+    npx drizzle-kit generate
+    ```
+
+    Review generated SQL in `drizzle/` directory
+  </Step>
+  <Step title="Apply Migration">
+    ```bash
+    # Development
+    npx drizzle-kit migrate
+    
+    # Production
+    # Set production DATABASE_URL
+    DATABASE_URL="..." npx drizzle-kit migrate
+    ```
+  </Step>
+  <Step title="Update Types">
+    Create TypeScript types in `lib/{module}/types.ts`:
+
+    ```typescript
+    import { InferSelectModel, InferInsertModel } from 'drizzle-orm';
+    import { newTable } from '@/db/schema';
+    
+    export type NewTableSelect = InferSelectModel<typeof newTable>;
+    export type NewTableInsert = InferInsertModel<typeof newTable>;
+    ```
+  </Step>
+</Steps>
+
+### Modifying Existing Tables
+
+<Warning>
+  **NEVER modify production data directly!** Always use migrations.
+</Warning>
+
+<Steps>
+  <Step title="Update Schema">
+    Modify the table definition in `db/schema.ts`
+  </Step>
+  <Step title="Generate Migration">
+    ```bash
+    npx drizzle-kit generate
+    ```
+  </Step>
+  <Step title="Review Migration">
+    Check the generated SQL carefully, especially for:
+
+    - Data loss (dropping columns)
+    - Constraint violations
+    - Performance impact (adding indexes to large tables)
+  </Step>
+  <Step title="Test in Development">
+    Apply migration to development database and test thoroughly
+  </Step>
+  <Step title="Apply to Production">
+    Only after thorough testing
+  </Step>
+</Steps>
+
+## Adding New Features
+
+### Feature Development Checklist
+
+<Checklist>
+  <Check>Create feature branch</Check>
+  <Check>Update database schema (if needed)</Check>
+  <Check>Create/update types in `lib/{module}/types.ts`</Check>
+  <Check>Implement API routes in `app/api/{module}/`</Check>
+  <Check>Add business logic in `lib/{module}/`</Check>
+  <Check>Create UI components in `components/`</Check>
+  <Check>Add pages in `app/home/{module}/`</Check>
+  <Check>Write tests in `__tests__/`</Check>
+  <Check>Update documentation</Check>
+  <Check>Test thoroughly</Check>
+  <Check>Create pull request</Check>
+</Checklist>
+
+### Example: Adding a New CMS Feature
+
+Let's say you want to add "Testimonials" to the CMS:
+
+<Steps>
+  <Step title="1. Database Schema">
+    ```typescript
+    // db/schema.ts
+    export const testimonials = pgTable('testimonials', {
+      id: uuid('id').defaultRandom().primaryKey(),
+      clientName: varchar('client_name', { length: 255 }).notNull(),
+      projectId: uuid('project_id').references(() => projects.id),
+      content: text('content').notNull(),
+      rating: integer('rating').notNull(), // 1-5
+      published: boolean('published').default(false),
+      createdAt: timestamp('created_at').defaultNow().notNull(),
+    });
+    ```
+
+    Generate and apply migration:
+
+    ```bash
+    npx drizzle-kit generate
+    npx drizzle-kit migrate
+    ```
+  </Step>
+  <Step title="2. Types">
+    ```typescript
+    // lib/cms/types.ts
+    export type Testimonial = InferSelectModel<typeof testimonials>;
+    export type TestimonialInsert = InferInsertModel<typeof testimonials>;
+    ```
+  </Step>
+  <Step title="3. API Routes">
+    ```typescript
+    // app/api/cms/testimonials/route.ts
+    import { db } from '@/lib/db';
+    import { testimonials } from '@/db/schema';
+    
+    export async function GET(request: Request) {
+      try {
+        const data = await db.select().from(testimonials);
+        return Response.json(data);
+      } catch (error) {
+        return Response.json(
+          { error: 'Failed to fetch testimonials' },
+          { status: 500 }
+        );
+      }
+    }
+    
+    export async function POST(request: Request) {
+      try {
+        const body = await request.json();
+        const [result] = await db.insert(testimonials).values(body).returning();
+        return Response.json(result, { status: 201 });
+      } catch (error) {
+        return Response.json(
+          { error: 'Failed to create testimonial' },
+          { status: 500 }
+        );
+      }
+    }
+    ```
+  </Step>
+  <Step title="4. UI Components">
+    ```typescript
+    // app/home/cms/testimonials/page.tsx
+    'use client';
+    
+    import { useQuery } from '@tanstack/react-query';
+    
+    export default function TestimonialsPage() {
+      const { data, isLoading } = useQuery({
+        queryKey: ['testimonials'],
+        queryFn: async () => {
+          const res = await fetch('/api/cms/testimonials');
+          return res.json();
+        },
+      });
+      
+      if (isLoading) return <LoadingSkeleton />;
+      
+      return (
+        <div>
+          <h1>Testimonials</h1>
+          {/* Table/list component here */}
+        </div>
+      );
+    }
+    ```
+  </Step>
+  <Step title="5. Navigation">
+    Add to sidebar navigation in layout component
+  </Step>
+  <Step title="6. Documentation">
+    Update API reference and feature documentation
+  </Step>
+</Steps>
+
+## Performance Optimization
+
+### Database Query Optimization
+
+<AccordionGroup>
+  <Accordion title="Use Indexes">
+    ```typescript
+    // db/schema.ts
+    import { index } from 'drizzle-orm/pg-core';
+    
+    export const projects = pgTable('projects', {
+      // ... columns
+    }, (table) => {
+      return {
+        statusIdx: index('projects_status_idx').on(table.status),
+        createdAtIdx: index('projects_created_at_idx').on(table.createdAt),
+      };
+    });
+    ```
+  </Accordion>
+
+  <Accordion title="Pagination">
+    Always paginate large datasets:
+
+    ```typescript
+    const page = 1;
+    const limit = 10;
+    
+    const data = await db
+      .select()
+      .from(projects)
+      .limit(limit)
+      .offset((page - 1) * limit);
+    ```
+  </Accordion>
+
+  <Accordion title="Select Only Needed Fields">
+    ```typescript
+    // Bad - fetches all columns
+    const projects = await db.select().from(projectsTable);
+    
+    // Good - fetches only needed columns
+    const projects = await db
+      .select({
+        id: projectsTable.id,
+        name: projectsTable.name,
+        status: projectsTable.status,
+      })
+      .from(projectsTable);
+    ```
+  </Accordion>
+
+  <Accordion title="Use Joins Efficiently">
+    ```typescript
+    import { eq } from 'drizzle-orm';
+    
+    const projectsWithGalleries = await db
+      .select()
+      .from(projects)
+      .leftJoin(galleries, eq(projects.id, galleries.projectId))
+      .limit(10);
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Frontend Performance
+
+<AccordionGroup>
+  <Accordion title="Implement Caching">
+    ```typescript
+    const { data } = useQuery({
+      queryKey: ['projects'],
+      queryFn: fetchProjects,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      cacheTime: 10 * 60 * 1000, // 10 minutes
+    });
+    ```
+  </Accordion>
+
+  <Accordion title="Lazy Load Components">
+    ```typescript
+    import dynamic from 'next/dynamic';
+    
+    const HeavyComponent = dynamic(() => import('./HeavyComponent'), {
+      loading: () => <LoadingSkeleton />,
+      ssr: false, // If component doesn't need SSR
+    });
+    ```
+  </Accordion>
+
+  <Accordion title="Optimize Images">
+    ```typescript
+    import Image from 'next/image';
+    
+    <Image
+      src="/uploads/large-image.jpg"
+      alt="Project"
+      width={800}
+      height={600}
+      quality={75}
+      placeholder="blur"
+      blurDataURL="data:image/..." // Optional blur placeholder
+    />
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Testing
+
+### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run specific test file
+npm test -- users.test.ts
+```
+
+### Writing Tests
+
+Create tests in `__tests__/` directory:
+
+```typescript
+// __tests__/api/cms/projects.test.ts
+import { GET } from '@/app/api/cms/projects/route';
+
+describe('GET /api/cms/projects', () => {
+  it('should return list of projects', async () => {
+    const request = new Request('http://localhost:3000/api/cms/projects');
+    const response = await GET(request);
+    const data = await response.json();
+    
+    expect(response.status).toBe(200);
+    expect(Array.isArray(data)).toBe(true);
+  });
+  
+  it('should support pagination', async () => {
+    const request = new Request('http://localhost:3000/api/cms/projects?page=1&limit=5');
+    const response = await GET(request);
+    const data = await response.json();
+    
+    expect(data.data.length).toBeLessThanOrEqual(5);
+    expect(data.pagination).toBeDefined();
+  });
+});
+```
+
+## Security Maintenance
+
+### Regular Security Tasks
+
+<Checklist>
+  <Check>Update dependencies monthly: `npm update`</Check>
+  <Check>Check for vulnerabilities: `npm audit`</Check>
+  <Check>Review and rotate secrets quarterly</Check>
+  <Check>Review activity logs for suspicious patterns</Check>
+  <Check>Test authentication flows regularly</Check>
+  <Check>Verify email security (SPF, DKIM, DMARC)</Check>
+</Checklist>
+
+### Dependency Updates
+
+<Steps>
+  <Step title="Check for Updates">
+    ```bash
+    npm outdated
+    ```
+  </Step>
+  <Step title="Update Dependencies">
+    ```bash
+    # Update all dependencies
+    npm update
+    
+    # Or update specific package
+    npm update package-name
+    ```
+  </Step>
+  <Step title="Test Thoroughly">
+    Run tests and manually test critical features
+  </Step>
+  <Step title="Commit Changes">
+    ```bash
+    git commit -m "chore: update dependencies"
+    ```
+  </Step>
+</Steps>
+
+## Monitoring & Maintenance
+
+### Weekly Tasks
+
+<Checklist>
+  <Check>Review Vercel deployment logs</Check>
+  <Check>Check database performance metrics (Neon dashboard)</Check>
+  <Check>Review activity logs for errors or suspicious activity</Check>
+  <Check>Monitor email delivery rates (Resend dashboard)</Check>
+  <Check>Check for failed cron jobs</Check>
+</Checklist>
+
+### Monthly Tasks
+
+<Checklist>
+  <Check>Review and update documentation</Check>
+  <Check>Update dependencies (`npm update`)</Check>
+  <Check>Database cleanup (if needed)</Check>
+  <Check>Performance audit</Check>
+  <Check>Security review</Check>
+  <Check>Backup verification</Check>
+</Checklist>
+
+### Quarterly Tasks
+
+<Checklist>
+  <Check>Rotate secrets (auth, API keys)</Check>
+  <Check>Review and optimize database indexes</Check>
+  <Check>Audit user permissions and access</Check>
+  <Check>Review and archive old data</Check>
+  <Check>Update disaster recovery plan</Check>
+</Checklist>
+
+## Debugging Tips
+
+### Database Issues
+
+```bash
+# Connect to database
+psql "$DATABASE_URL"
+
+# Useful queries
+SELECT * FROM __drizzle_migrations ORDER BY created_at DESC;
+SELECT COUNT(*) FROM users;
+SELECT * FROM activity_logs WHERE created_at > NOW() - INTERVAL '1 hour';
+
+# Check table sizes
+SELECT 
+  schemaname,
+  tablename,
+  pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size
+FROM pg_tables
+WHERE schemaname = 'public'
+ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
+```
+
+### API Debugging
+
+Enable verbose logging in development:
+
+```typescript
+// lib/db.ts
+import { drizzle } from 'drizzle-orm/neon-http';
+import { neon } from '@neondatabase/serverless';
+
+const sql = neon(process.env.DATABASE_URL!);
+
+export const db = drizzle(sql, {
+  logger: process.env.NODE_ENV === 'development',
+});
+```
+
+### Frontend Debugging
+
+Use React Query DevTools:
+
+```typescript
+// app/layout.tsx
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        <QueryClientProvider client={queryClient}>
+          {children}
+          <ReactQueryDevtools initialIsOpen={false} />
+        </QueryClientProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+## Common Workflows
+
+### Fixing a Bug
+
+<Steps>
+  <Step title="Reproduce Locally">
+    Understand the issue and reproduce in development
+  </Step>
+  <Step title="Create Fix Branch">
+    ```bash
+    git checkout -b fix/bug-description
+    ```
+  </Step>
+  <Step title="Write Test">
+    Write failing test that demonstrates the bug
+  </Step>
+  <Step title="Implement Fix">
+    Fix the issue and verify test passes
+  </Step>
+  <Step title="Test Manually">
+    Manually test the fix in development
+  </Step>
+  <Step title="Create PR">
+    Push branch and create pull request
+  </Step>
+</Steps>
+
+### Deploying to Production
+
+<Steps>
+  <Step title="Merge to Main">
+    After PR approval, merge to main branch
+  </Step>
+  <Step title="Automatic Deployment">
+    Vercel automatically deploys main branch
+  </Step>
+  <Step title="Monitor Deployment">
+    Watch deployment logs in Vercel dashboard
+  </Step>
+  <Step title="Verify Production">
+    Test critical features in production
+  </Step>
+  <Step title="Rollback if Needed">
+    If issues occur, promote previous deployment
+  </Step>
+</Steps>
+
+## Documentation
+
+### Keeping Documentation Updated
+
+<Warning>
+  Documentation should be updated WITH code changes, not as an afterthought.
+</Warning>
+
+**When to update docs**:
+
+- New feature added → Update feature docs \+ API reference
+- API endpoint changed → Update API reference
+- Database schema changed → Update database schema docs
+- Bug fix → Update troubleshooting if applicable
+- Configuration changed → Update getting started / deployment
+
+### Documentation Standards
+
+- Use clear, concise language
+- Include code examples
+- Add warnings for breaking changes
+- Mark unverified information with `[Inference]` or `[Unverified]`
+- Keep changelog up to date
+
+## Best Practices Summary
+
+<CardGroup cols={2}>
+  <Card title="Code Quality" icon="code">
+    - Follow TypeScript best practices
+    - Use ESLint and Prettier
+    - Write meaningful comments
+    - Keep functions small and focused
+  </Card>
+
+  <Card title="Git Workflow" icon="git">
+    - Use feature branches
+    - Write descriptive commit messages
+    - Keep commits atomic
+    - Rebase before merging
+  </Card>
+
+  <Card title="Testing" icon="flask">
+    - Write tests for new features
+    - Test edge cases
+    - Maintain high coverage
+    - Run tests before committing
+  </Card>
+
+  <Card title="Security" icon="shield">
+    - Never commit secrets
+    - Validate all inputs
+    - Use parameterized queries
+    - Keep dependencies updated
+  </Card>
+</CardGroup>
+
+## Getting Help
+
+If you need assistance:
+
+1. **Check Documentation**: This documentation site
+2. **Review Code**: Look at existing implementations
+3. **Search Issues**: GitHub issues for similar problems
+4. **Ask Team**: Reach out to other developers
+5. **External Resources**:
+   - [Next.js Docs](https://nextjs.org/docs)
+   - [Drizzle ORM Docs](https://orm.drizzle.team/docs)
+   - [Better Auth Docs](https://www.better-auth.com/docs)
+   - [TanStack Query Docs](https://tanstack.com/query)
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Architecture" icon="sitemap" href="/architecture">
+    Understand the system design
+  </Card>
+
+  <Card title="API Reference" icon="code" href="/api-reference">
+    Explore API endpoints
+  </Card>
+
+  <Card title="Troubleshooting" icon="wrench" href="/troubleshooting">
+    Solve common issues
+  </Card>
+
+  <Card title="Deployment" icon="server" href="/deployment">
+    Deploy to production
+  </Card>
+</CardGroup>
