@@ -12,9 +12,9 @@
     "global": {
       "anchors": [
         {
-          "anchor": "Documentation",
+          "anchor": "R Land Website",
           "icon": "book-open-cover",
-          "href": "https://mintlify.com/docs"
+          "href": "https://rlandph.vercel.app"
         },
         {
           "anchor": "Official Site",
