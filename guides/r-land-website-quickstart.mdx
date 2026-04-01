@@ -1,0 +1,58 @@
+---
+title: R Land website
+description: How the public marketing site relates to RLink and where to work on each
+---
+
+## Two different codebases
+
+**R Land website** is the customer-facing marketing experience (for example [rlandph.vercel.app](https://rlandph.vercel.app)). **RLink** is the internal admin portal ([rlink-dev.vercel.app](https://rlink-dev.vercel.app)) that powers CMS, CRM, and IAM for your team. They are not the same repository as [dazedmind/rlink](https://github.com/dazedmind/rlink).
+
+Use this page to avoid mixing up **documentation** (this Mintlify site), **RLink** (admin app), and the **public site** (content and marketing).
+
+## When to use RLink
+
+Editors and operators use RLink to:
+
+- Manage projects, news, careers, and amenities (CMS)
+- Work leads, reservations, inquiries, and campaigns (CRM)
+- Administer users, modules, and audit logs (IAM)
+
+Changes made in RLink typically feed data stores or APIs that the public site consumes. The exact integration depends on your deployment—confirm in your website repo and environment.
+
+## When to use the R Land website repo
+
+Use the marketing-site codebase when you are changing:
+
+- **Frontend** layout, copy, SEO, or performance on the public domain
+- **Integrations** with analytics, forms, or headless content from CMS
+- **Deployment** and preview URLs for the public brand
+
+## Working on this documentation
+
+This Mintlify project lives in your **docs** repository. To preview docs locally:
+
+1. Install the [Mintlify CLI](https://mintlify.com/docs/development/installation): `npm i -g mint` (or use `npx mint dev` per Mintlify’s current docs).
+2. From the docs root (where `docs.json` lives), run `mint dev`.
+3. Edit MDX files; the preview reloads on save.
+
+For `docs.json` options (navigation, theme, API reference), see [Mintlify documentation](https://mintlify.com/docs).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="RLink getting started" icon="rocket" href="/guides/getting-started">
+    Clone and run the admin app
+  </Card>
+
+  <Card title="Documentation site settings" icon="palette" href="/guides/site-settings">
+    Branding and `docs.json` for this docs project
+  </Card>
+
+  <Card title="REST API reference" icon="code" href="/api-reference/overview">
+    HTTP APIs used by the admin app
+  </Card>
+
+  <Card title="RLink on GitHub" icon="github" href="https://github.com/dazedmind/rlink">
+    Application source
+  </Card>
+</CardGroup>

@@ -1,0 +1,169 @@
+---
+title: "Proxy and request flow"
+description: "How requests move through RLink, including proxy rules, cookies, and CORS"
+---
+
+## Overview
+
+RLink handles requests in layers:
+
+1. Your browser requests a page or API route.
+2. `proxy.ts` can inspect the request before it reaches the route.
+3. Better Auth validates the session for protected flows.
+4. Route handlers under `app/api/` or pages under `app/home/` continue the request.
+
+Use this page when you are debugging login redirects, missing cookies, blocked API calls, or cross-origin behavior.
+
+## Where `proxy.ts` fits
+
+`proxy.ts` is the request boundary for rules that should run before a page or route handler.
+
+Typical responsibilities include:
+
+- Redirecting unauthenticated users away from protected pages
+- Applying cross-origin rules for API access
+- Normalizing request handling for shared entry points
+- Rejecting requests early when origin or auth state is invalid
+
+<Note>
+  Keep `proxy.ts` focused on request-level concerns. Put business logic in `app/api/*` or `lib/*`.
+</Note>
+
+## Page requests vs API requests
+
+### Protected app pages
+
+Pages under `/home/*` are authenticated application routes. If the user has no valid session cookie, RLink should send them back to `/login` or block the page in the app layer.
+
+### API routes
+
+Routes under `app/api/*` are HTTP endpoints. Some are private dashboard APIs. Others may be public or secret-protected, such as webhooks or cron routes.
+
+Before you expose a route publicly, decide:
+
+- Who is allowed to call it
+- Whether it uses cookies, a bearer secret, or a signature header
+- Whether browsers from another origin should be allowed
+- What status code you return on auth failure
+
+## Session and cookie flow
+
+RLink uses Better Auth with cookie-based sessions.
+
+The usual flow is:
+
+1. A user signs in on `/login`.
+2. Better Auth creates a session and sets cookies in the browser.
+3. Later requests to `/home/*` and protected APIs include those cookies automatically.
+4. The server validates the session before returning private data.
+
+Common cookie failure causes:
+
+- `NEXT_PUBLIC_APP_URL` does not match the real origin
+- You switched between `http` and `https`
+- You are testing on a Vercel preview URL with production cookie settings
+- Your API client did not forward browser cookies
+
+## CORS and `ALLOWED_ORIGIN`
+
+CORS matters only when a browser on one origin calls an API on another origin.
+
+Examples:
+
+- `https://admin.example.com` calling `https://admin.example.com/api/*`:
+  same origin, no CORS issue
+- `https://preview-app.vercel.app` calling `https://prod-app.vercel.app/api/*`:
+  cross origin, CORS rules apply
+
+Use `ALLOWED_ORIGIN` to match the browser origin you want to permit. If it is wrong, the browser may block the request before your app logic even runs.
+
+Symptoms of a bad CORS setup:
+
+- Failed `OPTIONS` preflight request
+- Request appears in DevTools but response is blocked
+- Cookies are missing on a cross-origin call
+- Browser shows a CORS error even though the server returned `200`
+
+## Server fetch vs browser fetch
+
+Do not assume all `fetch()` calls behave the same way.
+
+- **Browser fetch** after login usually sends same-origin cookies automatically
+- **Server-side fetch** inside Next.js may need you to forward headers or cookies yourself
+- **Postman / curl** never know your browser session unless you copy the cookies manually
+
+If an API works in the browser but fails in a script, compare the request headers first.
+
+## Debugging checklist
+
+When a request fails, check in this order:
+
+1. **URL**
+   Is the request hitting the right host, protocol, and path?
+2. **Cookies**
+   Did the browser actually send auth cookies?
+3. **Origin**
+   Does the request origin match `ALLOWED_ORIGIN` when cross-origin?
+4. **Response code**
+   `401` usually means unauthenticated. `403` usually means authenticated but not allowed.
+5. **Redirects**
+   Are you being bounced from `/home/*` to `/login` repeatedly?
+6. **Headers**
+   For cron and webhooks, did you send the secret or signature header the route expects?
+
+## Edge cases
+
+### Localhost vs preview vs production
+
+Treat each environment as a separate origin. A cookie from `localhost` does not apply to a Vercel preview URL, and a preview URL does not equal production.
+
+### Redirect loops
+
+If a signed-in user keeps landing back on `/login`, check:
+
+- Session cookie presence
+- Cookie domain and security flags
+- App URL environment variables
+- Whether `proxy.ts` and page-level guards disagree
+
+### Preflight requests
+
+Browsers may send `OPTIONS` before the real request. If your route or proxy blocks that preflight incorrectly, the browser never sends the actual API call.
+
+### Secret-protected routes
+
+Cron and webhook routes often do not use user cookies at all. They usually expect:
+
+- `Authorization: Bearer ...`
+- A provider-specific signature header
+- An allowlist check
+
+Do not reuse dashboard auth rules for those routes without a reason.
+
+## Best practices
+
+- Keep `proxy.ts` small and predictable
+- Prefer explicit route protection over hidden assumptions
+- Return clear `401` and `403` responses for APIs
+- Log request context, not secrets
+- Test auth and CORS in every environment you deploy
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="lock" href="/auth/authentication-guide">
+    Better Auth, sessions, and 2FA
+  </Card>
+
+  <Card title="Authorization" icon="shield-check" href="/auth/authorization-and-modules">
+    Module access and permission checks
+  </Card>
+
+  <Card title="Webhooks" icon="webhook" href="/api-reference/webhooks">
+    Secret validation and retries
+  </Card>
+
+  <Card title="Troubleshooting" icon="wrench" href="/operations/troubleshooting">
+    Request, cookie, and deployment failures
+  </Card>
+</CardGroup>

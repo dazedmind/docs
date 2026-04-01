@@ -1,0 +1,117 @@
+---
+title: 'DropSelect'
+---
+
+## Overview
+
+`DropSelect` is the reusable select-field wrapper used in RLink forms. It provides:
+
+- a shared label layout
+- required indicator support
+- consistent select chrome
+- a slot for your `<option>` elements
+
+Use it when you need a standard dropdown that matches the rest of the app’s form styling.
+
+## Source
+
+The component is implemented in `components/ui/DropSelect.tsx`.
+
+## Props
+
+| Prop | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `children` | `React.ReactNode` | Yes | Usually one or more `<option>` elements |
+| `selectName` | `string` | Yes | Applied to the underlying select |
+| `selectId` | `string` | Yes | Used for the field id / label association |
+| `onChange` | `(e: React.ChangeEvent) => void` | Yes | Controlled change handler |
+| `label` | `string` | No | Optional field label |
+| `value` | `string` | No | Controlled selected value |
+| `className` | `string` | No | Additional classes |
+| `required` | `boolean` | No | Shows `*` beside the label |
+
+## Basic usage
+
+```tsx
+import DropSelect from "@/components/ui/DropSelect";
+
+<DropSelect
+  label="Module"
+  selectName="module"
+  selectId="module"
+  value={form.module}
+  onChange={handleChange}
+  required
+>
+  <option value="">Select a module</option>
+  <option value="cms">CMS</option>
+  <option value="crm">CRM</option>
+  <option value="iam">IAM</option>
+</DropSelect>
+```
+
+## Controlled behavior
+
+`DropSelect` should be used as a controlled field.
+
+That means:
+
+- `value` comes from component or form state
+- `onChange` updates that state
+- the selected option is driven by the current state value
+
+## When to use it
+
+Use `DropSelect` for:
+
+- module pickers
+- status filters
+- type/category selection
+- any single-choice field using native `<select>`
+
+Prefer a native select wrapper like this when the option list is modest and you do not need search, async loading, or rich option rendering.
+
+## Best practices
+
+- Always include an empty placeholder option when the field is optional or should force a deliberate choice
+- Keep option values stable and machine-friendly
+- Use a clear `selectId` that matches the label’s purpose
+- Use `required` only when the form truly depends on a selection
+
+## Edge cases
+
+### Missing placeholder option
+
+If you omit a blank option, the browser may preselect the first real value, which can lead to accidental submissions.
+
+### Large option lists
+
+For very large or searchable lists, a native select may become hard to use. Consider a richer combobox pattern instead of stretching `DropSelect` beyond its purpose.
+
+### Value mismatch
+
+If `value` does not match any `<option>`, the select can show an unexpected state. Keep option values and persisted values aligned.
+
+### Disabled states
+
+`DropSelect.tsx` does not currently expose a `disabled` prop. If forms need disabled dropdowns consistently, extend the component instead of scattering one-off wrappers across the app.
+
+## Related docs
+
+<CardGroup cols={2}>
+  <Card title="TextInput" icon="text-size" href="/styling/components/input">
+    Reusable validated text field
+  </Card>
+
+  <Card title="FileUpload" icon="upload" href="/styling/components/file-upload">
+    Upload images through the shared uploader
+  </Card>
+
+  <Card title="Authorization" icon="shield-check" href="/auth/authorization-and-modules">
+    Common source of module and role dropdowns
+  </Card>
+
+  <Card title="Styling guide" icon="palette" href="/styling/styling-and-design-system">
+    Broader design system patterns
+  </Card>
+</CardGroup>

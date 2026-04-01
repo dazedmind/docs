@@ -705,37 +705,8 @@ export default function RootLayout({ children }) {
 - Use clear, concise language
 - Include code examples
 - Add warnings for breaking changes
+- Flag anything not verified against the repo with a clear **Note** or link to source
 - Keep changelog up to date
-
-### When Adding New Features / Making Changes
-
-Go to `/components/layout/Footer.tsx`
-
-Then update the version
-
-```text
-Example: v.0.0.15 → v.0.0.16
-```
-
-Be sure to follow [Semantic Versioning](https://semver.org/) when updating the system version
-
-<Note>
-  Always update `CHANGELOG.md` file with new features following the [CHANGELOG Format](https://keepachangelog.com/en/1.1.0/)
-</Note>
-
-Example:
-
-```text
-## [0.0.14] - 2026-03-27
-
-### Added
-- Resend Integration: (IAM) New users now receive a welcome onboarding email upon account creation.
-- Auth: Forgot password flow is now functional, including a dedicated reset password page.
-
-### Changes
-- Performance Optimization: Centralized data fetching per module - data is fetched upfront and cached, eliminating spinners and skeleton loaders on tab switches.
-- Codebase: General refactoring for improved maintainability.
-```
 
 ## Best Practices Summary
 
@@ -786,19 +757,19 @@ If you need assistance:
 ## Next Steps
 
 <CardGroup cols={2}>
-  <Card title="Architecture" icon="sitemap" href="/architecture">
+  <Card title="Architecture" icon="sitemap" href="/reference/architecture">
     Understand the system design
   </Card>
 
-  <Card title="API Reference" icon="code" href="/api-reference">
+  <Card title="REST API reference" icon="code" href="/api-reference/overview">
     Explore API endpoints
   </Card>
 
-  <Card title="Troubleshooting" icon="wrench" href="/troubleshooting">
+  <Card title="Troubleshooting" icon="wrench" href="/operations/troubleshooting">
     Solve common issues
   </Card>
 
-  <Card title="Deployment" icon="server" href="/deployment">
+  <Card title="Deployment" icon="server" href="/guides/deployment">
     Deploy to production
   </Card>
 </CardGroup>

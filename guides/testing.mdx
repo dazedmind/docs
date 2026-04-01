@@ -1,0 +1,161 @@
+---
+title: "Testing"
+description: "How to test RLink safely across domain logic, API routes, auth, and integrations"
+---
+
+## Overview
+
+RLink exposes risk in several places:
+
+- business logic in `lib/*`
+- protected API routes in `app/api/*`
+- authenticated pages under `/home/*`
+- email, cron, and webhook integrations
+
+A good testing strategy covers all of them without over-testing simple UI details.
+
+## What to test first
+
+Prioritize tests in this order:
+
+1. Domain logic in `lib/*`
+2. API authorization and validation
+3. High-risk integrations
+4. Critical user flows
+
+Examples of high-value coverage:
+
+- permission checks
+- schema or payload validation
+- duplicate-safe webhook handling
+- password reset flow
+- export or bulk action behavior
+
+## Available commands
+
+| Command | Purpose |
+| --- | --- |
+| `npm test` | Run the Jest test suite |
+| `npm run test:watch` | Run tests in watch mode |
+| `npm run lint` | Catch lint issues before merge |
+
+## Recommended test layers
+
+### Domain tests
+
+Test domain helpers in `lib/cms`, `lib/crm`, `lib/iam`, and `lib/email` first. These tests are usually faster and easier to keep stable than full UI tests.
+
+### API tests
+
+Add API-focused tests for:
+
+- `401` unauthenticated behavior
+- `403` unauthorized behavior
+- validation failures
+- success responses for critical mutations
+
+### Manual smoke tests
+
+For flows with external systems or cookies, manual verification still matters:
+
+- sign in
+- open `/home`
+- perform one CMS or CRM mutation
+- verify affected data reloads correctly
+- verify auth-only routes still block anonymous access
+
+## Integration-specific testing
+
+### Authentication
+
+Verify:
+
+- login success
+- login failure
+- session persistence
+- password reset
+- 2FA setup or verification if enabled
+
+### Webhooks
+
+Verify:
+
+- missing secret is rejected
+- invalid signature is rejected
+- duplicate events do not create duplicate records
+- valid requests return fast `2xx`
+
+### Cron routes
+
+Verify:
+
+- missing `CRON_SECRET` returns `401` or `403`
+- the route is safe to re-run
+- logs are useful without exposing secrets
+
+### Email
+
+Verify:
+
+- template renders with realistic props
+- generated links point to the correct environment
+- provider errors surface clearly in logs
+
+## Edge cases
+
+### Environment drift
+
+A flow may pass on `localhost` and fail on a Vercel preview because URLs, cookies, or sender domains differ. Test at least one non-local environment before treating auth or email work as done.
+
+### Time-sensitive flows
+
+Password reset, 2FA codes, signed webhook timestamps, and cron jobs all depend on time. Test expiry and replay behavior, not just the happy path.
+
+### Retried side effects
+
+Webhook retries, refreshes, or double-clicks can repeat the same mutation. Confirm duplicate-safe behavior for any action with external or destructive effects.
+
+### Permission changes
+
+After changing module access, test both:
+
+- a fresh login
+- an already logged-in user session
+
+## Manual regression checklist
+
+Use this quick list before you ship a risky change:
+
+- Can an unauthenticated user access protected pages?
+- Can a low-privilege user call admin APIs directly?
+- Do links in email open the correct environment?
+- Do webhook and cron routes reject bad secrets?
+- Do key mutations refresh or invalidate stale data?
+
+## Best practices
+
+- Test the domain layer first
+- Cover `401` and `403` explicitly
+- Add integration checks for secrets and retries
+- Prefer focused tests over broad brittle ones
+- Pair automated coverage with a short manual smoke test
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Domain libraries" icon="layer-group" href="/guides/domain-libraries">
+    Structure logic for easier testing
+  </Card>
+
+  <Card title="Webhooks" icon="webhook" href="/api-reference/webhooks">
+    Test signatures, retries, and idempotency
+  </Card>
+
+  <Card title="Email and notifications" icon="envelope" href="/guides/email-and-notifications">
+    Validate template rendering and links
+  </Card>
+
+  <Card title="Deployment" icon="server" href="/guides/deployment">
+    Environment-specific verification
+  </Card>
+</CardGroup>

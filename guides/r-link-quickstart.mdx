@@ -1,0 +1,64 @@
+---
+title: RLink quickstart
+description: Run the RLink admin app locally in a few steps
+---
+
+## What this covers
+
+This page is for the **RLink application** ([dazedmind/rlink](https://github.com/dazedmind/rlink)), not this Mintlify documentation site. Use it when you want a minimal path from clone to running dashboard.
+
+## 1. Clone and install
+
+```bash
+git clone https://github.com/dazedmind/rlink.git
+cd rlink
+npm install
+```
+
+Use **npm** only (the repo ships `package-lock.json`).
+
+## 2. Configure environment
+
+Create a `.env` file in the project root. You need at minimum a Neon `DATABASE_URL`, `NEXT_PUBLIC_APP_URL`, `BETTER_AUTH_SECRET` (32+ characters), and email keys if you exercise mail flows. See [Getting started](/guides/getting-started) for the full variable table and explanations.
+
+## 3. Apply the database schema
+
+```bash
+npx drizzle-kit migrate
+```
+
+For a throwaway local database only, `npx drizzle-kit push` is faster—**never** use `push` against production.
+
+## 4. Run the app
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000/login](http://localhost:3000/login). The authenticated area lives under `/home/*` and relies on `ProtectedRoute` plus session cookies from Better Auth.
+
+## Common pitfalls
+
+- **`NEXT_PUBLIC_APP_URL` mismatch** — Must match the origin you use in the browser (including `http` vs `https` and no stray trailing slash). Wrong values break auth cookies and redirects.
+- **Missing auth tables** — If login fails with database errors, confirm migrations ran and `db/auth-schema.ts` tables exist in Neon.
+- **Resend not configured** — Password reset and campaign email need `RESEND_API_KEY` / `RESEND_FROM`; without them, mail-dependent flows fail at runtime.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Introduction" icon="book" href="/">
+    Product overview and stack
+  </Card>
+
+  <Card title="Getting started (full)" icon="rocket" href="/guides/getting-started">
+    Prerequisites, scripts, and verification
+  </Card>
+
+  <Card title="Architecture" icon="sitemap" href="/reference/architecture">
+    How CMS, CRM, and IAM fit together
+  </Card>
+
+  <Card title="Authentication" icon="lock" href="/auth/authentication-guide">
+    Better Auth, sessions, and 2FA
+  </Card>
+</CardGroup>

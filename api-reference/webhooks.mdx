@@ -1,0 +1,201 @@
+---
+title: "Webhooks"
+description: "How to design, secure, test, and operate webhook endpoints in RLink"
+---
+
+## Overview
+
+RLink can expose webhook endpoints under `app/api/webhooks/*` for third-party systems that need to notify the app about an event.
+
+Examples include:
+
+- Form or lead ingestion
+- Payment or reservation updates
+- Marketing or email callbacks
+- Internal automation events
+
+This page documents the operating model for webhooks even if the exact route list changes over time.
+
+## Webhook design checklist
+
+Before you add a new webhook route, define:
+
+- The event source
+- The exact URL path
+- The auth model: secret header, signature, or allowlist
+- Expected payload shape
+- Retry behavior from the provider
+- Whether the event is idempotent
+
+<Warning>
+  Never accept a webhook just because it came from the public internet on the correct path. Always verify a secret, signature, or trusted source.
+</Warning>
+
+## Recommended request flow
+
+Use this sequence for new webhooks:
+
+1. Verify the request signature or secret
+2. Parse and validate the payload
+3. Reject duplicates if the provider can retry
+4. Perform the minimum safe work
+5. Return a fast `2xx` response
+6. Defer slow follow-up work when possible
+
+This keeps providers from retrying due to timeouts.
+
+## Authentication patterns
+
+### Shared secret
+
+The sender includes a shared secret in a header such as `Authorization` or `X-Webhook-Secret`. Your route compares it against an environment variable.
+
+Use this when:
+
+- You control both systems
+- The provider does not support signed payloads
+
+### Signed payload
+
+The sender signs the raw request body with a secret. Your route recomputes the signature and compares it before trusting the payload.
+
+Use this when:
+
+- The provider supports request signing
+- Replay protection matters
+- You need stronger tamper detection
+
+### IP allowlist
+
+Use this only as an additional control, not the only control. Cloud providers can change ranges, and proxies complicate source IP handling.
+
+## Payload validation
+
+Validate webhook payloads before processing them.
+
+At minimum, check:
+
+- Required fields are present
+- IDs have the format you expect
+- Timestamps are valid
+- Enum values are allowed
+- The event type is supported
+
+If the provider sends extra fields, ignore them unless you need them.
+
+## Idempotency and retries
+
+Most webhook providers retry on:
+
+- Timeout
+- Network failure
+- Any non-`2xx` status code
+
+Design handlers so repeated delivery does not corrupt data.
+
+Good strategies:
+
+- Store provider event IDs and reject duplicates
+- Upsert instead of blindly inserting
+- Check current state before mutating records
+- Make side effects safe to repeat
+
+## Logging and observability
+
+Log enough to debug, but never log secrets.
+
+Safe fields to log:
+
+- Event ID
+- Event type
+- Route name
+- Source system
+- Result status
+
+Avoid logging:
+
+- Secret headers
+- Raw tokens
+- Full personal data unless required
+
+## Local testing
+
+To test a webhook locally:
+
+1. Run the app on a public tunnel or preview URL
+2. Point the provider to that public URL
+3. Send a sample signed request
+4. Confirm the route returns `2xx`
+5. Verify the expected database or side effect change
+
+For manual testing, `curl` is enough if the webhook uses a shared secret:
+
+```bash
+curl -X POST http://localhost:3000/api/webhooks/example \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-secret" \
+  -d '{"eventId":"evt_123","type":"example.created"}'
+```
+
+## Failure handling
+
+Use the response code intentionally:
+
+- `200` or `204`: accepted
+- `400`: invalid payload
+- `401` or `403`: bad or missing auth
+- `409`: duplicate event, if you want to signal that explicitly
+- `500`: unexpected processing error
+
+If a provider retries automatically, avoid returning `500` for known validation failures.
+
+## Edge cases
+
+### Out-of-order events
+
+Some providers do not guarantee ordering. Do not assume `updated` always arrives after `created`.
+
+### Duplicate delivery
+
+Retries and provider bugs can deliver the same event more than once. Treat idempotency as required, not optional.
+
+### Clock skew
+
+If you validate timestamps in signatures, allow a small tolerance window so valid requests are not rejected due to clock drift.
+
+### Large payloads
+
+Some events include nested objects or attachments. Reject oversized bodies early if you do not need them.
+
+### Preview environments
+
+Do not point production webhooks at a preview URL unless you intend to test there. Preview URLs change and can silently break integrations.
+
+## Best practices
+
+- Keep webhook handlers small
+- Validate before mutating data
+- Make handlers idempotent
+- Return `2xx` quickly
+- Rotate webhook secrets regularly
+- Document each provider contract near the route implementation
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="API overview" icon="code" href="/api-reference/introduction">
+    Sessions, CORS, and route types
+  </Card>
+
+  <Card title="Proxy and request flow" icon="shuffle" href="/reference/proxy-and-request-flow">
+    How requests reach protected routes
+  </Card>
+
+  <Card title="Deployment" icon="server" href="/guides/deployment">
+    Environment variables and production setup
+  </Card>
+
+  <Card title="Testing" icon="flask" href="/guides/testing">
+    How to test secrets, retries, and failures
+  </Card>
+</CardGroup>

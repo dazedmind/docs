@@ -1,0 +1,146 @@
+---
+title: 'TextInput'
+---
+
+## Overview
+
+`TextInput` is the reusable text field used across RLink forms. It wraps the base `Input` component and adds:
+
+- optional label rendering
+- required indicator
+- built-in validation hints
+- password visibility toggle
+- shared styling through `cn()`
+
+Use it when you want form fields to behave consistently across CMS, CRM, IAM, and settings screens.
+
+## Source
+
+The component is implemented in `components/ui/TextInput.tsx`.
+
+## Props
+
+| Prop | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `name` | `string` | Yes | Used for field identity and auto-validation detection |
+| `type` | `string` | Yes | Common values: `text`, `email`, `password`, `tel`, `number` |
+| `placeholder` | `string` | Yes | Placeholder text shown in the input |
+| `value` | `string` | Yes | Controlled value |
+| `onChange` | `(e: React.ChangeEvent) => void` | Yes | Controlled change handler |
+| `label` | `string` | No | Field label rendered above the input |
+| `className` | `string` | No | Extra styling classes |
+| `required` | `boolean` | No | Shows `*` beside the label |
+| `disabled` | `boolean` | No | Disables editing |
+| `validationType` | `"email" | "name" | "phone" | "Employee ID" | "none"` | No | Overrides auto-detected validation |
+
+## Auto-validation behavior
+
+`TextInput` automatically chooses a validation type from `name` and `type` when `validationType` is not passed.
+
+Current detection rules:
+
+- `type="email"` or names containing `email` -> email validation
+- names like `firstname`, `lastname`, `name`, `first`, `last` -> name validation
+- `type="number"`, `type="tel"`, or names containing `phone` -> phone validation
+- `type="text"` with `name` containing `employeeId` -> employee ID validation
+- otherwise -> no validation
+
+<Note>
+  Validation only appears once the field has a value. Empty values are treated as valid here, so required-state enforcement should still happen at the form level.
+</Note>
+
+## Password behavior
+
+When `type="password"`, the component adds a visibility toggle using the eye icon button. This makes it a good default for login, reset-password, or security forms.
+
+## Basic usage
+
+```tsx
+import TextInput from "@/components/ui/TextInput";
+
+<TextInput
+  label="Email"
+  name="email"
+  type="email"
+  placeholder="name@company.com"
+  value={form.email}
+  onChange={handleChange}
+  required
+/>
+```
+
+## Password example
+
+```tsx
+<TextInput
+  label="Password"
+  name="password"
+  type="password"
+  placeholder="Enter your password"
+  value={form.password}
+  onChange={handleChange}
+  required
+/>
+```
+
+## Custom validation override
+
+Use `validationType` when the field name is too generic to infer safely.
+
+```tsx
+<TextInput
+  label="Employee ID"
+  name="id"
+  type="text"
+  placeholder="EMP-00123"
+  value={form.employeeId}
+  onChange={handleChange}
+  validationType="Employee ID"
+/>
+```
+
+## Best practices
+
+- Keep `TextInput` controlled with local or form state
+- Use meaningful `name` values so auto-validation works
+- Override `validationType` when inference would be ambiguous
+- Keep required validation in the form schema or submit handler too
+- Use consistent labels and placeholders across the app
+
+## Edge cases
+
+### Empty values
+
+The component does not mark an empty field invalid. That is intentional so optional fields do not show errors immediately.
+
+### Generic field names
+
+A field named `value` or `input` will not infer useful validation. Pass `validationType` explicitly if you want validation messaging.
+
+### Phone numbers
+
+`type="number"` and `type="tel"` both map to phone validation. If you use those input types for non-phone numeric fields, set `validationType="none"`.
+
+### Password managers
+
+The show/hide toggle changes the rendered input type between `password` and `text`. Test autofill behavior on login and reset screens after changing markup around this component.
+
+## Related docs
+
+<CardGroup cols={2}>
+  <Card title="DropSelect" icon="list" href="/styling/components/select">
+    Documented select wrapper for consistent field styling
+  </Card>
+
+  <Card title="FileUpload" icon="upload" href="/styling/components/file-upload">
+    Image upload field backed by `/api/upload`
+  </Card>
+
+  <Card title="Styling guide" icon="palette" href="/styling/styling-and-design-system">
+    Shared UI patterns and class conventions
+  </Card>
+
+  <Card title="Dashboard overview" icon="grid-2" href="/guides/dashboard-overview">
+    Where these components appear in the app
+  </Card>
+</CardGroup>

@@ -1,0 +1,124 @@
+---
+title: "Authorization and modules"
+description: "How RLink controls access across CMS, CRM, IAM, and settings"
+---
+
+## Authentication vs authorization
+
+These are different concerns:
+
+- **Authentication** answers: who are you?
+- **Authorization** answers: what are you allowed to do?
+
+A user can be signed in and still receive `403 Forbidden` if they do not have access to a module or action.
+
+## Module model
+
+RLink is organized around application areas under `/home/*`, including:
+
+- `cms`
+- `crm`
+- `iam`
+- `settings`
+
+Authorization should align with those product boundaries in both the UI and the API.
+
+## Where access checks belong
+
+Apply permission checks in more than one place:
+
+- In the dashboard UI, so users do not see actions they cannot use
+- In `app/api/*`, so direct HTTP requests are still blocked
+- In domain logic when a sensitive action can be reached through multiple entry points
+
+<Warning>
+  Hiding a button is not authorization. Always enforce the rule in the server path that performs the action.
+</Warning>
+
+## Recommended access pattern
+
+When you add a protected feature:
+
+1. Define which module owns it
+2. Define which users or roles may access it
+3. Enforce the rule in the page or component
+4. Enforce the same rule in the route handler
+5. Log or audit sensitive changes when appropriate
+
+Examples of sensitive actions:
+
+- Creating or disabling users
+- Editing module access
+- Exporting private CRM data
+- Triggering bulk email
+
+## IAM as the source of truth
+
+The IAM area should be the administrative place where module access is reviewed and changed. If you let authorization rules drift between UI code and API code, users will see inconsistent behavior.
+
+Keep these aligned:
+
+- module definitions
+- permission labels
+- API enforcement
+- audit logging
+
+## Debugging `403 Forbidden`
+
+When a signed-in user gets `403`, check:
+
+1. Does the session belong to the expected user?
+2. Does that user still have the required module access?
+3. Is the UI checking one rule while the API checks another?
+4. Did a recent permission change require the user to sign in again?
+5. Is the request going through a route that forgot to enforce the new rule?
+
+## Edge cases
+
+### Stale sessions after access changes
+
+If you change permissions while a user is already signed in, the current session may not reflect the update immediately depending on how the app caches auth state. Test both fresh login and active-session behavior.
+
+### Direct URL access
+
+Users may paste a URL directly to a page they should not open. Do not rely on navigation visibility alone.
+
+### Background actions
+
+Cron routes, webhooks, and internal automation are not normal end-user flows. They may need their own authorization model based on secrets or signatures rather than user sessions.
+
+### Export and bulk actions
+
+Read-only access is not the same as export access. Decide whether bulk downloads, destructive operations, and campaign sends require stricter permissions.
+
+### Partial UI states
+
+A user may have access to one module but not another. Keep shared layout and navigation resilient so the app does not break when some sections are unavailable.
+
+## Best practices
+
+- Prefer least privilege
+- Enforce permissions on the server
+- Group permissions by business capability
+- Re-test access rules after role changes
+- Audit high-risk actions
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="lock" href="/auth/authentication-guide">
+    Sessions, login, and 2FA
+  </Card>
+
+  <Card title="Dashboard overview" icon="grid-2" href="/guides/dashboard-overview">
+    How CMS, CRM, IAM, and settings fit together
+  </Card>
+
+  <Card title="REST API reference" icon="code" href="/api-reference/overview">
+    Review protected endpoints by module
+  </Card>
+
+  <Card title="Troubleshooting" icon="wrench" href="/operations/troubleshooting">
+    Investigate `401` and `403` failures
+  </Card>
+</CardGroup>

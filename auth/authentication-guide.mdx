@@ -1,5 +1,5 @@
 ---
-title: "Authentication System"
+title: "Authentication"
 description: "How authentication works in RLink using Better Auth"
 ---
 
@@ -56,11 +56,10 @@ DATABASE_URL="postgresql://..." # For session storage
 
 ### Better Auth Setup
 
-Better Auth is configured in the application but the exact configuration file location is not specified in the repository structure shown. 
+Better Auth is wired through the Next.js App Router. In the [RLink repository](https://github.com/dazedmind/rlink), look for:
 
-**[Inference]** The configuration is likely in:
-- `lib/auth.ts` or
-- `app/api/auth/[...all]/route.ts`
+- A catch-all auth route under `app/api/auth/` (Better Auth’s usual pattern)
+- Client helpers (for example `lib/auth-client.ts` or similar) used by the login and dashboard
 
 Key features enabled:
 - Email/Password authentication
@@ -183,7 +182,7 @@ When 2FA is enabled:
 
 ### Backup Codes
 
-**[Inference]** Backup codes are likely generated when 2FA is first enabled, allowing users to access their account if they lose their authenticator device.
+Backup codes (if enabled in your Better Auth configuration) are typically issued when 2FA is first enabled so users can sign in without the authenticator app.
 
 ## Password Reset Flow
 
@@ -284,7 +283,7 @@ New users can only be created by administrators through the IAM module:
   </Accordion>
 
   <Accordion title="Rate Limiting" icon="gauge">
-    **[Inference]** Login attempts are rate-limited to prevent brute force attacks
+    Login attempts should be rate-limited to reduce brute-force risk (configure in Better Auth or at the edge).
   </Accordion>
 </AccordionGroup>
 
@@ -415,9 +414,9 @@ Reset password with token.
 
 ## Client-Side Usage
 
-### Using Auth Context
+### Using the auth client
 
-**[Inference]** Better Auth likely provides a React context for accessing auth state:
+Use the project’s generated Better Auth client (see `lib/` in the repo) for session state:
 
 ```typescript
 'use client';
@@ -477,15 +476,21 @@ return <AuthenticatedContent />;
 
 ## Troubleshooting
 
-Common authentication issues and solutions can be found in the [Troubleshooting Guide](/troubleshooting#authentication-issues).
+Common authentication issues and solutions are in [Troubleshooting — Authentication issues](/operations/troubleshooting#authentication-issues).
 
 ## Next Steps
 
 <CardGroup cols={2}>
-  <Card title="IAM Features" icon="users-gear" href="/features/iam">
-    Learn about user management and access control
+  <Card title="Architecture" icon="sitemap" href="/reference/architecture">
+    IAM boundaries and data flow
   </Card>
-  <Card title="API Security" icon="shield" href="/guides/api-development">
-    Secure your API endpoints
+  <Card title="Authorization" icon="shield-check" href="/auth/authorization-and-modules">
+    Module access and `403` behavior
+  </Card>
+  <Card title="API overview" icon="shield" href="/api-reference/introduction">
+    Sessions, CORS, and how routes are documented
+  </Card>
+  <Card title="Dashboard overview" icon="grid-2" href="/guides/dashboard-overview">
+    Where users work after sign-in
   </Card>
 </CardGroup>

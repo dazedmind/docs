@@ -1,0 +1,126 @@
+---
+title: "Dashboard overview"
+description: "How to navigate and operate the authenticated RLink application"
+---
+
+## Overview
+
+After sign-in, most day-to-day work happens under `/home/*`.
+
+The dashboard is organized around four main areas:
+
+- **CMS** for content and project management
+- **CRM** for leads, reservations, inquiries, and campaigns
+- **IAM** for users, modules, and activity history
+- **Settings** for user-specific configuration and security actions
+
+Use this page as a functional map of the app.
+
+## CMS
+
+The CMS area is where you manage public-facing content and structured records.
+
+Typical work includes:
+
+- managing projects and inventory-linked content
+- publishing news or announcements
+- maintaining careers or amenity records
+- updating SEO-related content fields
+
+Before publishing or editing content, confirm which fields also affect the public site.
+
+## CRM
+
+The CRM area helps you work operational customer data.
+
+Typical work includes:
+
+- triaging inbound leads
+- reviewing reservations
+- handling inquiries
+- managing newsletter or campaign flows
+
+CRM actions often have follow-up effects, such as notifications, exports, or status changes. Review destructive actions carefully before confirming them.
+
+## IAM
+
+The IAM area controls who can access the system and what they can do.
+
+Typical work includes:
+
+- creating and updating users
+- assigning module access
+- reviewing activity logs
+- supporting account recovery and security actions
+
+Treat IAM as high risk. Changes here can lock users out or expose data unintentionally.
+
+## Settings
+
+Settings usually contains user-level actions such as:
+
+- password changes
+- 2FA setup or removal
+- profile updates
+- personal preferences
+
+If a user reports a session or login issue, check both Settings and the global auth configuration.
+
+## Operator checklist
+
+Before you change critical data:
+
+1. Confirm you are in the correct environment
+2. Confirm your account has the right module access
+3. Review whether the action triggers email, exports, or audit entries
+4. Check whether another teammate may be editing the same record
+
+## Edge cases
+
+### Partial access
+
+Users may have access to only one or two modules. Navigation and feature documentation should assume mixed permissions, not full admin access.
+
+### Destructive actions
+
+Bulk delete, disable, export, and campaign actions can have wide impact. If the UI supports confirmation steps, use them. If it does not, add them before expanding the feature.
+
+### Concurrent edits
+
+Two users can sometimes change the same record close together. Document or implement conflict handling where data loss would matter.
+
+### Side effects
+
+A simple change in CRM or IAM may also:
+
+- send email
+- write an activity log
+- affect reporting
+- change what appears on the public site
+
+## Best practices
+
+- Use the module that owns the data
+- Double-check environment before high-risk actions
+- Review side effects before submitting
+- Treat IAM and bulk actions as sensitive workflows
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Authorization" icon="shield-check" href="/auth/authorization-and-modules">
+    How module access is enforced
+  </Card>
+
+  <Card title="Authentication" icon="lock" href="/auth/authentication-guide">
+    Sessions, login, and 2FA
+  </Card>
+
+  <Card title="Email and notifications" icon="envelope" href="/guides/email-and-notifications">
+    Password reset and operational mail flows
+  </Card>
+
+  <Card title="Troubleshooting" icon="wrench" href="/operations/troubleshooting">
+    Common runtime and access issues
+  </Card>
+</CardGroup>

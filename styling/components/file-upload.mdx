@@ -1,0 +1,143 @@
+---
+title: 'FileUpload'
+---
+
+## Overview
+
+`FileUpload` is the shared image uploader used in RLink forms. It is a client component that uploads a selected file to `/api/upload` and returns the uploaded file URL through `onChange`.
+
+It is designed primarily for image-based CMS and profile-style workflows.
+
+## Source
+
+The component is implemented in `components/ui/FileUpload.tsx`.
+
+## Props
+
+| Prop | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `onChange` | `(url: string) => void` | Yes | Receives the uploaded file URL, or `""` when cleared |
+| `value` | `string \| null` | No | Current uploaded image URL |
+| `accept` | `string` | No | Defaults to `image/jpeg,image/png,image/webp,image/gif` |
+| `label` | `string` | No | Field label |
+| `hint` | `string` | No | Help text shown when there is no error |
+| `className` | `string` | No | Extra classes |
+| `required` | `boolean` | No | Shows `*` beside the label |
+| `aspect` | `"square" \| "rectangle"` | No | Controls the expected visual crop shape |
+
+## What it does
+
+`FileUpload` handles these responsibilities:
+
+- opens a file picker
+- posts the file to `/api/upload`
+- sends cookies with `credentials: "include"`
+- shows uploading and error states
+- previews the uploaded image when `value` exists
+- lets the user clear the current image
+
+## Basic usage
+
+```tsx
+import { FileUpload } from "@/components/ui/FileUpload";
+
+<FileUpload
+  label="Project cover"
+  value={form.coverPhoto}
+  onChange={(url) => setForm((prev) => ({ ...prev, coverPhoto: url }))}
+  hint="Use a clear landscape image for best results."
+/>
+```
+
+## Square image example
+
+```tsx
+<FileUpload
+  label="Avatar"
+  value={form.avatar}
+  onChange={(url) => setForm((prev) => ({ ...prev, avatar: url }))}
+  aspect="square"
+  accept="image/jpeg,image/png,image/webp"
+  hint="Square images look best for profile-style layouts."
+/>
+```
+
+## Upload flow
+
+The component currently:
+
+1. reads the first selected file
+2. appends it to `FormData`
+3. `POST`s to `/api/upload`
+4. parses the JSON response
+5. calls `onChange(data.url)` when successful
+
+If the route returns an error payload, the component displays that message. Otherwise it falls back to `Upload failed`.
+
+## API expectations
+
+For `FileUpload` to work correctly, `/api/upload` should:
+
+- accept multipart form data
+- require an authenticated session if uploads are private
+- return JSON
+- include a `url` field on success
+- include an `error` field on failure when possible
+
+<Warning>
+  `FileUpload` is only as reliable as `/api/upload`. If the route shape changes, update the component and this page together.
+</Warning>
+
+## Best practices
+
+- Store the returned URL in form state, not the raw `File`
+- Use `hint` to document image requirements for editors
+- Match `aspect` to how the image is displayed in the UI
+- Keep accepted file types tight for the use case
+- Test upload behavior in the real environment, not only on localhost
+
+## Edge cases
+
+### Authentication
+
+The component sends `credentials: "include"`, so uploads depend on valid session cookies. If uploads work in one environment and fail in another, check auth and origin settings first.
+
+### Only the first file is used
+
+`handleFile()` reads `files?.[0]`. Multi-file upload is not supported by this component.
+
+### File size limits
+
+The UI hints at a 5 MB max, but the true limit is enforced server-side. Keep client copy and server behavior aligned.
+
+### Non-image files
+
+By default, the component is configured for images. If you broaden `accept`, confirm the backend and preview behavior support those file types too.
+
+### Broken preview URL
+
+If `value` points to an invalid or expired URL, the preview may fail. The component hides a broken image, but the saved data is still wrong until corrected.
+
+### Clearing a value
+
+The clear action calls `onChange("")`. Make sure the consuming form treats the empty string as "remove image" and not as an accidental no-op.
+
+## Related docs
+
+<CardGroup cols={2}>
+  <Card title="TextInput" icon="text-size" href="/styling/components/input">
+    Shared text and password field behavior
+  </Card>
+
+  <Card title="DropSelect" icon="list" href="/styling/components/select">
+    Consistent dropdown styling and labels
+  </Card>
+
+  <Card title="Email and notifications" icon="envelope" href="/guides/email-and-notifications">
+    Helpful when uploaded assets appear in emails or campaigns
+  </Card>
+
+  <Card title="Testing" icon="flask" href="/guides/testing">
+    Validate upload success, errors, and auth failures
+  </Card>
+</CardGroup>

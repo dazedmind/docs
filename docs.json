@@ -12,14 +12,19 @@
     "global": {
       "anchors": [
         {
-          "anchor": "R Land Website",
-          "icon": "book-open-cover",
+          "anchor": "R Land website",
+          "icon": "laptop",
           "href": "https://rlandph.vercel.app"
         },
         {
-          "anchor": "Official Site",
-          "icon": "newspaper",
+          "anchor": "RLink app",
+          "icon": "globe",
           "href": "https://rlink-dev.vercel.app"
+        },
+        {
+          "anchor": "Source",
+          "icon": "github",
+          "href": "https://github.com/dazedmind/rlink"
         }
       ]
     },
@@ -31,45 +36,63 @@
             "group": "Getting started",
             "pages": [
               "index",
-              "getting-started",
-              "r-link-quickstart",
-              "r-land-website-quickstart",
-              "deployment"
+              "guides/getting-started",
+              "guides/r-link-quickstart",
+              "guides/r-land-website-quickstart",
+              "guides/dashboard-overview",
+              "guides/deployment"
             ]
           },
           {
-            "group": "System Design",
+            "group": "System design",
             "pages": [
-              "architecture",
-              "sitemap",
-              "database-schema"
+              "reference/architecture",
+              "reference/proxy-and-request-flow",
+              "reference/sitemap",
+              "reference/database-schema"
             ]
           },
           {
-            "group": "Troubleshooting",
+            "group": "Security",
             "pages": [
-              "common-troubleshooting",
-              "maintenance"
+              "auth/authentication-guide",
+              "auth/authorization-and-modules"
             ]
           },
           {
-            "group": "Authentication",
+            "group": "Operations",
             "pages": [
-              "authentication-guide"
+              "operations/troubleshooting",
+              "operations/maintenance"
             ]
           },
           {
-            "group": "System UI & Styling",
+            "group": "Development",
             "pages": [
-              "styling-and-design-system",
+              "guides/domain-libraries",
+              "guides/testing",
+              "guides/email-and-notifications"
+            ]
+          },
+          {
+            "group": "UI and styling",
+            "pages": [
+              "styling/styling-and-design-system",
               {
                 "group": "Components",
                 "pages": [
-                  "input",
-                  "select",
-                  "file-upload"
+                  "styling/components/input",
+                  "styling/components/select",
+                  "styling/components/file-upload"
                 ]
               }
+            ]
+          },
+          {
+            "group": "Documentation site",
+            "pages": [
+              "guides/site-settings",
+              "guides/site-navigation"
             ]
           },
           {
@@ -86,13 +109,15 @@
         "tab": "API reference",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Overview",
             "pages": [
-              "api-reference/introduction"
+              "api-reference/introduction",
+              "api-reference/overview",
+              "api-reference/webhooks"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Mintlify OpenAPI examples",
             "pages": [
               "api-reference/endpoint/get",
               "api-reference/endpoint/create",
@@ -111,28 +136,26 @@
   "navbar": {
     "links": [
       {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "label": "Changelog",
+        "href": "https://github.com/dazedmind/rlink/blob/main/CHANGELOG.md"
       }
     ]
   },
   "contextual": {
     "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity",
+      "mcp",
+      "cursor",
+      "vscode"
+    ]
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+      "github": "https://github.com/dazedmind/rlink"
     }
   }
 }

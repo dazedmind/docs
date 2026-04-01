@@ -351,7 +351,7 @@ This guide covers frequent issues developers may encounter when working with RLi
    }, []); // Empty dependency array
    ```
 
-3. **[Inference] Adjust Rate Limits**: If legitimate high traffic, adjust rate limiting middleware
+3. **Adjust rate limits**: If traffic is legitimate, raise limits in your middleware or edge configuration.
 
 ## Email Issues
 
@@ -667,7 +667,37 @@ useEffect(() => {
 
 3. **Restart Dev Server**: Stop and restart `npm run dev`
 
-## Getting More Help
+## Development and deployment edge cases
+
+### Preview URLs vs production (Vercel)
+
+Vercel preview deployments get a **different hostname** on every branch. Set `NEXT_PUBLIC_APP_URL` (and related auth URLs) to match the environment you are testing. A cookie issued on `localhost` will not work on a preview URL, and mixing `http` and `https` breaks sessions.
+
+### Windows vs macOS/Linux
+
+- **Line endings** — If scripts fail mysteriously, check Git `core.autocrlf` and ensure shell scripts use LF where required.
+- **Environment variables** — In PowerShell, use `$env:VAR=value` for one-off commands; in Command Prompt, use `set VAR=value`.
+- **Port 3000** — See [Getting started](/guides/getting-started) for PowerShell and bash commands to free a port.
+
+### Database and Neon
+
+- **Cold starts / timeouts** — First request after idle can be slower; connection pooling (Neon serverless) or retry logic may be needed for scripts.
+- **SSL** — Production `DATABASE_URL` should use `sslmode=require` (or your provider’s equivalent).
+- **`drizzle-kit push` on production** — Can drift from migration history. Prefer `generate` + `migrate` for anything that matters.
+
+### Cron and secured routes
+
+Scheduled jobs that call `/api/cron/*` must send the **`Authorization`** header (or mechanism) your route expects—typically `CRON_SECRET` on Vercel. Missing or wrong secrets return **401** or **403** with no obvious UI hint.
+
+### CORS and `ALLOWED_ORIGIN`
+
+Browser calls from another origin to RLink APIs must match **`ALLOWED_ORIGIN`** and cookie rules. Symptoms: preflight failures, or `401` with no session cookie. Align the origin with your deployment docs in [Deployment](/guides/deployment).
+
+### API clients and cookies
+
+Server-side fetch from Next.js to your own API can omit cookies if you do not forward them. `fetch` from the browser after login usually includes cookies automatically. For Postman or curl, you must **copy session cookies** from the browser after login.
+
+## Getting more help
 
 If your issue isn't covered here:
 

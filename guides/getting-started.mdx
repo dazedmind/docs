@@ -159,20 +159,24 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 rlink/
 ├── app/                    # Next.js App Router
 │   ├── api/               # API route handlers
-│   ├── home/              # Authenticated dashboard
-│   ├── login/             # Authentication pages
-│   └── globals.css        # Global styles
+│   ├── home/              # Authenticated dashboard (/home/*)
+│   ├── login/             # Public auth entry
+│   ├── forgot-password/
+│   ├── reset-password/
+│   └── globals.css
 ├── components/            # Shared UI components
 ├── db/                    # Database schemas
 │   ├── schema.ts          # Application tables
 │   └── auth-schema.ts     # Better Auth tables
 ├── drizzle/               # SQL migrations
 ├── hooks/                 # React hooks
-├── lib/                   # Utilities and helpers
-│   ├── cms/              # CMS logic
-│   ├── crm/              # CRM logic
-│   └── iam/              # IAM logic
+├── lib/                   # Domain helpers and utilities
+│   ├── cms/               # CMS types, queries, cache
+│   ├── crm/
+│   ├── iam/
+│   └── email/
 ├── templates/email/       # React Email templates
+├── proxy.ts               # Session redirect + API CORS helpers
 └── public/                # Static assets
 ```
 
@@ -208,20 +212,28 @@ All tests should pass if the setup is correct.
 ## Next Steps
 
 <CardGroup cols={2}>
-  <Card title="Architecture Overview" icon="sitemap" href="/architecture">
+  <Card title="Architecture" icon="sitemap" href="/reference/architecture">
     Understand the system design
   </Card>
 
-  <Card title="Database Schema" icon="database" href="/database/schema">
+  <Card title="Database schema" icon="database" href="/reference/database-schema">
     Learn about the data models
   </Card>
 
-  <Card title="Authentication" icon="lock" href="/features/authentication">
+  <Card title="Authentication" icon="lock" href="/auth/authentication-guide">
     Explore auth implementation
   </Card>
 
-  <Card title="API Reference" icon="code" href="/api-reference">
+  <Card title="REST API reference" icon="code" href="/api-reference/overview">
     Review available endpoints
+  </Card>
+
+  <Card title="Dashboard overview" icon="grid-2" href="/guides/dashboard-overview">
+    Understand the app areas under `/home/*`
+  </Card>
+
+  <Card title="Testing" icon="flask" href="/guides/testing">
+    Verify setup, auth, and API behavior
   </Card>
 </CardGroup>
 
@@ -241,15 +253,25 @@ All tests should pass if the setup is correct.
     - Ensure you're using a compatible Node.js version (LTS recommended)
   </Accordion>
 
-  <Accordion title="Port Already in Use">
+  <Accordion title="Port already in use">
     If port 3000 is already in use:
 
     ```bash
-    # Find and kill the process using port 3000
+    # macOS / Linux — find and stop the process on port 3000
     lsof -ti:3000 | xargs kill -9
-    
+
     # Or use a different port
     PORT=3001 npm run dev
+    ```
+
+    ```powershell
+    # Windows PowerShell — find PID on port 3000, then stop it
+    Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue |
+      Select-Object -ExpandProperty OwningProcess -Unique |
+      ForEach-Object { Stop-Process -Id $_ -Force }
+
+    # Or use a different port
+    $env:PORT=3001; npm run dev
     ```
   </Accordion>
 
@@ -260,6 +282,6 @@ All tests should pass if the setup is correct.
   </Accordion>
 </AccordionGroup>
 
-<Warning>
-  **\[Inference\]** If you encounter issues not covered here, check the application logs for specific error messages. The error messages will typically indicate the root cause.
-</Warning>
+<Note>
+  If something still fails, check the terminal and browser **Network** tab for the exact status code and response body. That message usually points to the root cause (missing env, bad URL, or schema mismatch).
+</Note>

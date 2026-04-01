@@ -351,7 +351,7 @@ jobs:
 
 ### 1. Enable Edge Functions
 
-**[Inference]** Consider using Vercel Edge Functions for API routes that need ultra-low latency:
+For routes that benefit from running at the edge, you can opt in explicitly (validate compatibility with your dependencies first):
 
 ```typescript
 // app/api/some-route/route.ts
@@ -406,7 +406,7 @@ Enable Vercel Analytics for production insights:
 
 ### Error Tracking
 
-**[Inference]** Consider integrating error tracking:
+Consider integrating error tracking for production:
 
 - **Sentry**: For comprehensive error monitoring
 - **LogRocket**: For session replay
@@ -456,8 +456,8 @@ If a deployment causes issues:
     ```
   </Accordion>
 
-  <Accordion title="Rate Limiting" icon="gauge">
-    **[Inference]** Rate limiting is implemented server-side in API routes. Ensure it's properly configured for production traffic.
+  <Accordion title="Rate limiting" icon="gauge">
+    Apply rate limits at the application or edge layer for sensitive routes (login, public APIs). Tune limits for legitimate traffic spikes.
   </Accordion>
 
   <Accordion title="Database Security" icon="database">
@@ -578,10 +578,10 @@ For production, consider Vercel Pro or Enterprise for:
 ## Next Steps
 
 <CardGroup cols={2}>
-  <Card title="Monitoring Guide" icon="chart-line" href="/guides/monitoring">
-    Set up monitoring and alerts
+  <Card title="Troubleshooting" icon="wrench" href="/operations/troubleshooting">
+    Production issues and edge cases
   </Card>
-  <Card title="Maintenance" icon="wrench" href="/guides/maintenance">
-    Regular maintenance tasks
+  <Card title="Maintenance" icon="wrench" href="/operations/maintenance">
+    Routine tasks and workflows
   </Card>
 </CardGroup>

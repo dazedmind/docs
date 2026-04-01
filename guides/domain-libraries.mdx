@@ -1,0 +1,134 @@
+---
+title: "Domain libraries"
+description: "How to structure business logic in lib/cms, lib/crm, lib/iam, and lib/email"
+---
+
+## Overview
+
+RLink keeps business logic in domain-focused libraries under `lib/`.
+
+Common areas include:
+
+- `lib/cms/`
+- `lib/crm/`
+- `lib/iam/`
+- `lib/email/`
+
+Use these libraries to keep route handlers and UI code small.
+
+## Why this layer exists
+
+Without a domain layer, logic spreads across:
+
+- route handlers
+- client components
+- table actions
+- modal submit handlers
+
+That makes features hard to test and easy to break.
+
+The domain layer should own:
+
+- data access
+- validation orchestration
+- business rules
+- cache invalidation helpers
+- reusable feature-specific utilities
+
+## Recommended layering
+
+Use this mental model:
+
+1. **`lib/*`** defines the business operation
+2. **`app/api/*`** exposes it over HTTP
+3. **`app/home/*`** calls the API and renders the result
+
+Keep the boundaries clean:
+
+- Do not put database access in client components
+- Do not bury business rules only inside UI event handlers
+- Do not make route handlers responsible for every detail of a feature
+
+## Common file patterns
+
+You may see patterns such as:
+
+- `types.ts` for shared domain types
+- `queries.ts` for database queries
+- `cache.ts` for cache keys or invalidation helpers
+
+You do not need every file in every module, but the intent should stay clear.
+
+## Adding a new feature
+
+When you add a new end-to-end feature:
+
+1. Decide which domain owns it
+2. Add or update helpers in the relevant `lib/*` area
+3. Expose the operation in `app/api/*` if the client needs it
+4. Build the page or component in `app/home/*`
+5. Add tests for the domain logic and high-risk API behavior
+
+Example ownership rules:
+
+- CMS content publishing belongs in `lib/cms/`
+- lead or reservation workflows belong in `lib/crm/`
+- users and module access belong in `lib/iam/`
+- message rendering and send helpers belong in `lib/email/`
+
+## Caching and invalidation
+
+RLink uses TanStack Query on the client, but cache strategy still needs server awareness.
+
+Think about:
+
+- Which query keys depend on a mutation
+- Whether a server response should trigger refetch
+- Whether you need a dedicated invalidation helper
+- Whether optimistic UI could hide a server error
+
+## Edge cases
+
+### Cross-domain features
+
+Some workflows touch more than one domain. For example, a CRM action may send an email or create an audit log entry. Pick one primary owner and call helpers from other domains intentionally instead of duplicating logic.
+
+### Circular dependencies
+
+If `lib/cms/` starts importing deep files from `lib/crm/` and back again, stop and simplify. Shared concerns should move to a smaller common helper.
+
+### Route-only logic
+
+If you implement a rule only in one route handler, another route may bypass it later. Put reusable rules in the domain layer.
+
+### UI-only validation
+
+Client validation improves UX, but the server must validate the same business constraints before writing data.
+
+## Best practices
+
+- Keep route handlers thin
+- Keep domain helpers explicit
+- Prefer small reusable operations over giant catch-all helpers
+- Co-locate cache helpers with the domain they affect
+- Add tests at the domain layer first
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Architecture" icon="sitemap" href="/reference/architecture">
+    See how the layers fit together
+  </Card>
+
+  <Card title="Testing" icon="flask" href="/guides/testing">
+    Validate domain behavior safely
+  </Card>
+
+  <Card title="REST API reference" icon="code" href="/api-reference/overview">
+    Review route surfaces by module
+  </Card>
+
+  <Card title="Maintenance" icon="wrench" href="/operations/maintenance">
+    Day-to-day contributor workflow
+  </Card>
+</CardGroup>

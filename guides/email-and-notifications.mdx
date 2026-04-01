@@ -1,0 +1,172 @@
+---
+title: "Email and notifications"
+description: "How RLink uses React Email, Resend, and notification flows"
+---
+
+## Overview
+
+RLink uses:
+
+- `templates/email/` for React Email templates
+- `lib/email/` for sending logic and helpers
+- Resend for delivery
+
+Email appears in several product flows, including password reset and operational notifications. Treat it as a production surface, not a cosmetic add-on.
+
+## Common email flows
+
+RLink typically sends email for:
+
+- Password reset
+- Transactional notifications
+- Newsletter or campaign delivery
+- System-generated follow-ups
+
+When you add a new email flow, document:
+
+- Who receives it
+- What triggers it
+- Which template it uses
+- Which environment variables it needs
+- Whether retries are safe
+
+## Required configuration
+
+At minimum, verify these values:
+
+| Variable | Purpose |
+| --- | --- |
+| `RESEND_API_KEY` | Authenticates with Resend |
+| `RESEND_FROM` | Default sender address |
+| `NEXT_PUBLIC_APP_URL` | Builds links users can open |
+| `BETTER_AUTH_URL` | Optional fallback for auth-related links |
+
+<Warning>
+  A working email template is not enough. Wrong URLs or sender configuration can make production emails unusable even if delivery succeeds.
+</Warning>
+
+## Template workflow
+
+Use this pattern when adding a new template:
+
+1. Create a React Email template under `templates/email/`
+2. Keep the props explicit and minimal
+3. Render links from environment-aware URLs
+4. Add a sender helper in `lib/email/`
+5. Trigger the send from the route or domain logic that owns the event
+
+Good template practices:
+
+- Use clear subject lines
+- Keep copy short
+- Use absolute URLs
+- Prefer stable props over passing whole model objects
+- Avoid leaking internal IDs unless the recipient needs them
+
+## Sending flow ownership
+
+Keep responsibilities separate:
+
+- **Template**: layout and copy
+- **Email helper**: delivery provider details
+- **Feature logic**: decides when an email should send
+
+Do not bury business rules inside the template itself.
+
+## Local development
+
+During development, verify:
+
+- Resend credentials are present if you expect real delivery
+- Links point to the environment you are testing
+- The template renders with realistic sample data
+
+If you do not want to send real mail during local development, mock the email helper or use a safe test address.
+
+## Production concerns
+
+### Verified sender
+
+Your sender domain must be configured correctly in Resend. If it is not, delivery may fail or fall back to a lower-trust sender.
+
+### Link correctness
+
+Password reset and other action emails fail in practice when links point to:
+
+- `localhost` from production
+- The wrong Vercel preview URL
+- A different protocol than the deployed app
+
+### Retry safety
+
+If a route retries after a timeout, you may accidentally send duplicate emails. Decide whether the send should be:
+
+- safe to repeat
+- deduplicated
+- queued
+
+### Sensitive content
+
+Do not include secrets, raw tokens, or internal-only notes in templates or logs.
+
+## Edge cases
+
+### Preview deployments
+
+Preview URLs change. If a preview build sends a real email, the recipient may get a link that expires or points to the wrong environment.
+
+### Spam and reputation
+
+Even valid mail can land in spam. If users report missing email, verify:
+
+- sender domain reputation
+- SPF / DKIM / DMARC setup
+- exact recipient address
+- provider dashboard delivery status
+
+### Broken personalization
+
+If a template expects `user.name` or another field and the value is missing, the email can render poorly. Validate required template props before sending.
+
+### Campaign scale
+
+Newsletter or bulk mail flows have different constraints than password reset. Think about rate limits, batching, unsubscribe behavior, and auditability.
+
+## Debugging checklist
+
+If email does not arrive:
+
+1. Confirm the feature actually triggered the send
+2. Check server logs for provider errors
+3. Verify `RESEND_API_KEY` and `RESEND_FROM`
+4. Check the provider dashboard
+5. Open the delivered message and test every link
+6. Verify the message did not land in spam
+
+## Best practices
+
+- Keep templates simple
+- Centralize provider calls in `lib/email/`
+- Generate absolute links from trusted env values
+- Protect against duplicate sends
+- Test both template rendering and delivery behavior
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="lock" href="/auth/authentication-guide">
+    Password reset and auth-related mail flows
+  </Card>
+
+  <Card title="Testing" icon="flask" href="/guides/testing">
+    Validate templates, links, and retries
+  </Card>
+
+  <Card title="Deployment" icon="server" href="/guides/deployment">
+    Production configuration and secrets
+  </Card>
+
+  <Card title="Troubleshooting" icon="wrench" href="/operations/troubleshooting">
+    Delivery failures and common errors
+  </Card>
+</CardGroup>
