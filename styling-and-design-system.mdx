@@ -1,0 +1,760 @@
+---
+title: Styling Cheat Sheet
+description: 'Quick reference for common RLink styling patterns'
+---
+
+## Quick Reference
+
+This cheat sheet provides quick copy-paste examples for common styling patterns in RLink.
+
+## Color Classes
+
+### Background & Text Colors
+
+```tsx
+// Primary colors
+className="bg-primary text-primary-foreground"
+
+// Background
+className="bg-background text-foreground"
+
+// Card
+className="bg-card text-card-foreground"
+
+// Muted (secondary text)
+className="text-muted-foreground"
+
+// Destructive (errors)
+className="bg-destructive text-destructive-foreground"
+
+// Accent
+className="bg-accent text-accent-foreground"
+```
+
+### Status Colors
+
+```tsx
+// Success
+className="bg-green-500 text-white"
+className="text-green-600 dark:text-green-400"
+
+// Warning
+className="bg-yellow-500 text-white"
+className="text-yellow-600 dark:text-yellow-400"
+
+// Error
+className="bg-red-500 text-white"
+className="text-red-600 dark:text-red-400"
+
+// Info
+className="bg-blue-500 text-white"
+className="text-blue-600 dark:text-blue-400"
+```
+
+## Spacing
+
+### Common Padding Values
+
+```tsx
+className="p-1"    // 4px
+className="p-2"    // 8px
+className="p-3"    // 12px
+className="p-4"    // 16px (most common)
+className="p-6"    // 24px
+className="p-8"    // 32px
+className="p-12"   // 48px
+
+// Directional
+className="px-4 py-2"  // Horizontal 16px, Vertical 8px
+className="pt-4"       // Top only
+className="pb-4"       // Bottom only
+```
+
+### Common Gap Values
+
+```tsx
+className="gap-2"   // 8px
+className="gap-4"   // 16px (most common)
+className="gap-6"   // 24px
+className="gap-8"   // 32px
+```
+
+## Typography
+
+### Headings
+
+```tsx
+<h1 className="text-4xl font-bold">Main Title</h1>
+<h2 className="text-3xl font-semibold">Section</h2>
+<h3 className="text-2xl font-semibold">Subsection</h3>
+<h4 className="text-xl font-medium">Minor Heading</h4>
+```
+
+### Body Text
+
+```tsx
+<p className="text-base">Normal text</p>
+<p className="text-sm text-muted-foreground">Secondary text</p>
+<p className="text-xs text-muted-foreground">Small text</p>
+<p className="font-semibold">Bold text</p>
+```
+
+## Layout
+
+### Flex Patterns
+
+```tsx
+// Horizontal stack
+className="flex items-center gap-2"
+
+// Vertical stack
+className="flex flex-col gap-4"
+
+// Space between
+className="flex items-center justify-between"
+
+// Center content
+className="flex items-center justify-center"
+
+// Right align
+className="flex items-center justify-end"
+
+// Wrap items
+className="flex flex-wrap gap-4"
+```
+
+### Grid Patterns
+
+```tsx
+// Responsive grid
+className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+
+// Equal columns
+className="grid grid-cols-2 gap-4"
+className="grid grid-cols-3 gap-4"
+className="grid grid-cols-4 gap-4"
+
+// Auto-fit
+className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4"
+```
+
+## Buttons
+
+### Button Variants
+
+```tsx
+import { Button } from "@/components/ui/button";
+
+<Button>Default</Button>
+<Button variant="secondary">Secondary</Button>
+<Button variant="outline">Outline</Button>
+<Button variant="ghost">Ghost</Button>
+<Button variant="link">Link</Button>
+<Button variant="destructive">Delete</Button>
+
+// Sizes
+<Button size="sm">Small</Button>
+<Button size="default">Default</Button>
+<Button size="lg">Large</Button>
+<Button size="icon"><Icon /></Button>
+```
+
+### Button States
+
+```tsx
+<Button disabled>Disabled</Button>
+<Button className="w-full">Full Width</Button>
+
+// With icon
+<Button>
+  <Plus className="mr-2 h-4 w-4" />
+  Add New
+</Button>
+
+// Icon only
+<Button size="icon" variant="ghost">
+  <Edit className="h-4 w-4" />
+</Button>
+```
+
+## Cards
+
+### Basic Card
+
+```tsx
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+
+<Card>
+  <CardHeader>
+    <CardTitle>Title</CardTitle>
+    <CardDescription>Description</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <p>Content</p>
+  </CardContent>
+  <CardFooter>
+    <Button>Action</Button>
+  </CardFooter>
+</Card>
+```
+
+### Card Variants
+
+```tsx
+// With hover effect
+<Card className="hover:shadow-lg transition-shadow cursor-pointer">
+
+// With border accent
+<Card className="border-l-4 border-l-primary">
+
+// Elevated
+<Card className="shadow-md">
+```
+
+## Forms
+
+### Basic Form Field
+
+```tsx
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+<div className="grid gap-2">
+  <Label htmlFor="field">Label</Label>
+  <Input id="field" placeholder="Enter value..." />
+</div>
+```
+
+### Form Layout
+
+```tsx
+<form className="space-y-6">
+  <div className="grid gap-4 md:grid-cols-2">
+    <div className="grid gap-2">
+      <Label>First Name</Label>
+      <Input />
+    </div>
+    <div className="grid gap-2">
+      <Label>Last Name</Label>
+      <Input />
+    </div>
+  </div>
+  
+  <div className="grid gap-2">
+    <Label>Email</Label>
+    <Input type="email" />
+  </div>
+  
+  <Button type="submit" className="w-full">Submit</Button>
+</form>
+```
+
+## Tables
+
+### Simple Table
+
+```tsx
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
+<div className="rounded-md border">
+  <Table>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Name</TableHead>
+        <TableHead>Status</TableHead>
+        <TableHead className="text-right">Actions</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Item 1</TableCell>
+        <TableCell>Active</TableCell>
+        <TableCell className="text-right">
+          <Button variant="ghost" size="sm">Edit</Button>
+        </TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+```
+
+## Dialogs
+
+### Basic Dialog
+
+```tsx
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+
+<Dialog>
+  <DialogTrigger asChild>
+    <Button>Open</Button>
+  </DialogTrigger>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Title</DialogTitle>
+      <DialogDescription>Description</DialogDescription>
+    </DialogHeader>
+    {/* Content */}
+  </DialogContent>
+</Dialog>
+```
+
+### Confirmation Dialog
+
+```tsx
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+
+<AlertDialog>
+  <AlertDialogTrigger asChild>
+    <Button variant="destructive">Delete</Button>
+  </AlertDialogTrigger>
+  <AlertDialogContent>
+    <AlertDialogHeader>
+      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+      <AlertDialogDescription>
+        This action cannot be undone.
+      </AlertDialogDescription>
+    </AlertDialogHeader>
+    <AlertDialogFooter>
+      <AlertDialogCancel>Cancel</AlertDialogCancel>
+      <AlertDialogAction onClick={handleDelete}>
+        Delete
+      </AlertDialogAction>
+    </AlertDialogFooter>
+  </AlertDialogContent>
+</AlertDialog>
+```
+
+## Notifications
+
+### Toast Notifications
+
+```tsx
+import { toast } from "sonner";
+
+// Success
+toast.success("Success message");
+
+// Error
+toast.error("Error message");
+
+// Info
+toast("Info message");
+
+// With description
+toast.success("Success", {
+  description: "Your changes have been saved",
+});
+
+// With action
+toast("Event created", {
+  action: {
+    label: "Undo",
+    onClick: () => console.log("Undo"),
+  },
+});
+```
+
+### Alert Messages
+
+```tsx
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
+// Info alert
+<Alert>
+  <AlertTitle>Heads up!</AlertTitle>
+  <AlertDescription>
+    Information message here
+  </AlertDescription>
+</Alert>
+
+// Error alert
+<Alert variant="destructive">
+  <AlertTitle>Error</AlertTitle>
+  <AlertDescription>
+    Error message here
+  </AlertDescription>
+</Alert>
+```
+
+## Badges
+
+```tsx
+import { Badge } from "@/components/ui/badge";
+
+<Badge>Default</Badge>
+<Badge variant="secondary">Secondary</Badge>
+<Badge variant="outline">Outline</Badge>
+<Badge variant="destructive">Error</Badge>
+
+// Custom colors
+<Badge className="bg-green-500">Success</Badge>
+<Badge className="bg-yellow-500">Warning</Badge>
+<Badge className="bg-blue-500">Info</Badge>
+```
+
+## Loading States
+
+### Skeleton Loaders
+
+```tsx
+import { Skeleton } from "@/components/ui/skeleton";
+
+// Text skeleton
+<div className="space-y-2">
+  <Skeleton className="h-4 w-full" />
+  <Skeleton className="h-4 w-3/4" />
+  <Skeleton className="h-4 w-1/2" />
+</div>
+
+// Card skeleton
+<Card>
+  <CardHeader>
+    <Skeleton className="h-6 w-1/2" />
+    <Skeleton className="h-4 w-3/4" />
+  </CardHeader>
+  <CardContent>
+    <Skeleton className="h-32 w-full" />
+  </CardContent>
+</Card>
+
+// Avatar skeleton
+<Skeleton className="h-12 w-12 rounded-full" />
+```
+
+### Spinner
+
+```tsx
+import { Loader2 } from "lucide-react";
+
+<Loader2 className="h-4 w-4 animate-spin" />
+
+// In button
+<Button disabled>
+  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+  Loading...
+</Button>
+```
+
+## Responsive Design
+
+### Mobile/Desktop Toggle
+
+```tsx
+// Hide on mobile, show on desktop
+<div className="hidden md:block">Desktop only</div>
+
+// Show on mobile, hide on desktop
+<div className="block md:hidden">Mobile only</div>
+
+// Different content
+<div className="md:hidden">Mobile content</div>
+<div className="hidden md:block">Desktop content</div>
+```
+
+### Responsive Spacing
+
+```tsx
+className="p-4 md:p-6 lg:p-8"
+className="gap-2 md:gap-4 lg:gap-6"
+className="text-sm md:text-base lg:text-lg"
+```
+
+## Icons
+
+### Common Icon Patterns
+
+```tsx
+import { Plus, Edit, Trash2, Search, Download, Upload, X } from "lucide-react";
+
+// Button with icon
+<Button>
+  <Plus className="mr-2 h-4 w-4" />
+  Add New
+</Button>
+
+// Icon button
+<Button size="icon" variant="ghost">
+  <Edit className="h-4 w-4" />
+</Button>
+
+// Icon with text
+<div className="flex items-center gap-2">
+  <Search className="h-4 w-4 text-muted-foreground" />
+  <span>Search</span>
+</div>
+```
+
+## Empty States
+
+```tsx
+<div className="flex flex-col items-center justify-center p-8 text-center">
+  <div className="rounded-full bg-muted p-3 mb-4">
+    <FolderIcon className="h-6 w-6 text-muted-foreground" />
+  </div>
+  <h3 className="text-lg font-semibold">No items found</h3>
+  <p className="mt-2 text-sm text-muted-foreground">
+    Get started by creating your first item
+  </p>
+  <Button className="mt-4">
+    <Plus className="mr-2 h-4 w-4" />
+    Create Item
+  </Button>
+</div>
+```
+
+## Borders & Dividers
+
+```tsx
+// Borders
+className="border"
+className="border-2"
+className="border-t"
+className="border-b"
+className="border-l-4 border-l-primary"
+
+// Rounded corners
+className="rounded"
+className="rounded-md"
+className="rounded-lg"
+className="rounded-full"
+
+// Separator
+import { Separator } from "@/components/ui/separator";
+
+<div className="space-y-4">
+  <div>Content 1</div>
+  <Separator />
+  <div>Content 2</div>
+</div>
+```
+
+## Shadows
+
+```tsx
+className="shadow-sm"   // Small
+className="shadow"      // Default
+className="shadow-md"   // Medium
+className="shadow-lg"   // Large
+className="shadow-xl"   // Extra large
+
+// Hover shadow
+className="hover:shadow-lg transition-shadow"
+```
+
+## Custom Utilities
+
+### Truncate Text
+
+```tsx
+className="truncate"                    // Single line
+className="line-clamp-2"                // Two lines
+className="line-clamp-3"                // Three lines
+```
+
+### Transitions
+
+```tsx
+className="transition-colors duration-200"
+className="transition-all duration-300"
+className="hover:scale-105 transition-transform"
+```
+
+### Overlay
+
+```tsx
+<div className="relative">
+  <img src="..." alt="..." />
+  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+    <p className="text-white">Overlay content</p>
+  </div>
+</div>
+```
+
+## Dark Mode
+
+```tsx
+// Conditional styling
+className="bg-white dark:bg-slate-900"
+className="text-black dark:text-white"
+className="border-gray-200 dark:border-gray-800"
+
+// Force dark/light
+<div className="dark">
+  {/* Always dark theme */}
+</div>
+```
+
+## Accessibility
+
+```tsx
+// Screen reader only
+<span className="sr-only">Hidden text for screen readers</span>
+
+// Focus styles
+className="focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+
+// Aria labels
+<Button aria-label="Close dialog">
+  <X className="h-4 w-4" />
+</Button>
+```
+
+## Common Patterns
+
+### Page Header
+
+```tsx
+<div className="border-b">
+  <div className="container flex items-center justify-between py-4">
+    <h1 className="text-2xl font-bold">Page Title</h1>
+    <Button>
+      <Plus className="mr-2 h-4 w-4" />
+      Add New
+    </Button>
+  </div>
+</div>
+```
+
+### Stats Card
+
+```tsx
+<Card>
+  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+    <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+    <DollarSign className="h-4 w-4 text-muted-foreground" />
+  </CardHeader>
+  <CardContent>
+    <div className="text-2xl font-bold">$45,231</div>
+    <p className="text-xs text-muted-foreground">
+      +20.1% from last month
+    </p>
+  </CardContent>
+</Card>
+```
+
+### Search Bar
+
+```tsx
+<div className="relative">
+  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+  <Input
+    placeholder="Search..."
+    className="pl-9"
+  />
+</div>
+```
+
+### Action Menu
+
+```tsx
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { MoreVertical } from "lucide-react";
+
+<DropdownMenu>
+  <DropdownMenuTrigger asChild>
+    <Button variant="ghost" size="icon">
+      <MoreVertical className="h-4 w-4" />
+    </Button>
+  </DropdownMenuTrigger>
+  <DropdownMenuContent align="end">
+    <DropdownMenuItem>Edit</DropdownMenuItem>
+    <DropdownMenuItem>Duplicate</DropdownMenuItem>
+    <DropdownMenuItem className="text-destructive">
+      Delete
+    </DropdownMenuItem>
+  </DropdownMenuContent>
+</DropdownMenu>
+```
+
+## Pro Tips
+
+1. **Use `cn()` utility for conditional classes**:
+```tsx
+import { cn } from "@/lib/utils";
+
+<div className={cn(
+  "base-classes",
+  isActive && "active-classes",
+  variant === "primary" && "primary-classes"
+)} />
+```
+
+2. **Responsive container**:
+```tsx
+<div className="container mx-auto px-4 max-w-7xl">
+  Centered content with max width
+</div>
+```
+
+3. **Card hover effect**:
+```tsx
+<Card className="hover:shadow-lg transition-shadow cursor-pointer">
+  Hoverable card
+</Card>
+```
+
+4. **Disabled state**:
+```tsx
+<div className="opacity-50 pointer-events-none">
+  Disabled content
+</div>
+```
+
+## Copy-Paste Templates
+
+Save these templates for quick use:
+
+### Form Modal
+```tsx
+<Dialog>
+  <DialogTrigger asChild>
+    <Button>Open Form</Button>
+  </DialogTrigger>
+  <DialogContent className="sm:max-w-[425px]">
+    <DialogHeader>
+      <DialogTitle>Form Title</DialogTitle>
+      <DialogDescription>Form description</DialogDescription>
+    </DialogHeader>
+    <form className="space-y-4">
+      <div className="grid gap-2">
+        <Label>Field Label</Label>
+        <Input placeholder="Enter value..." />
+      </div>
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="outline">Cancel</Button>
+        <Button type="submit">Save</Button>
+      </div>
+    </form>
+  </DialogContent>
+</Dialog>
+```
+
+### Data Table Row
+```tsx
+<TableRow className="hover:bg-muted/50">
+  <TableCell className="font-medium">{item.name}</TableCell>
+  <TableCell>
+    <Badge variant="outline">{item.status}</Badge>
+  </TableCell>
+  <TableCell className="text-right">
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon">
+          <MoreVertical className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem>Edit</DropdownMenuItem>
+        <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  </TableCell>
+</TableRow>
+```
+
+---
+
+<Note>
+  For more detailed styling information, see the [Styling & Design System](/guides/styling-design-system) guide.
+</Note>

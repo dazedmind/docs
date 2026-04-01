@@ -59,10 +59,17 @@
             ]
           },
           {
-            "group": "Customization",
+            "group": "System UI & Styling",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "styling-and-design-system",
+              {
+                "group": "Components",
+                "pages": [
+                  "input",
+                  "select",
+                  "file-upload"
+                ]
+              }
             ]
           },
           {
